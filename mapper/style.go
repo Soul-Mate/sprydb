@@ -3,7 +3,7 @@ package mapper
 import (
 	"unicode"
 	"bytes"
-	)
+)
 
 // 映射器的风格接口
 type MapperStyler interface {
@@ -11,8 +11,7 @@ type MapperStyler interface {
 	column(string) string
 }
 
-type CamelMapperStyle struct {
-}
+type CamelMapperStyle struct{}
 
 func (*CamelMapperStyle) table(str string) string {
 	var buf bytes.Buffer
@@ -21,8 +20,8 @@ func (*CamelMapperStyle) table(str string) string {
 	for i := 1; i < strLen; i++ {
 		switch str[i] {
 		case '_', ' ':
-			if i + 1 < strLen {
-				buf.WriteRune(unicode.ToUpper(rune(str[i + 1])))
+			if i+1 < strLen {
+				buf.WriteRune(unicode.ToUpper(rune(str[i+1])))
 			}
 			i++
 		default:
@@ -39,8 +38,8 @@ func (*CamelMapperStyle) column(str string) string {
 	for i := 1; i < strLen; i++ {
 		switch str[i] {
 		case '_', ' ':
-			if i + 1 < strLen {
-				buf.WriteRune(unicode.ToUpper(rune(str[i + 1])))
+			if i+1 < strLen {
+				buf.WriteRune(unicode.ToUpper(rune(str[i+1])))
 			}
 			i++
 		default:
@@ -50,12 +49,11 @@ func (*CamelMapperStyle) column(str string) string {
 	return buf.String()
 }
 
-type UnderlineMapperStyle struct {
-}
+type UnderlineMapperStyle struct{}
 
 func (*UnderlineMapperStyle) table(str string) string {
 	var buf bytes.Buffer
-	buf.WriteRune(unicode.ToLower( rune(str[0])))
+	buf.WriteRune(unicode.ToLower(rune(str[0])))
 	for i, n := 1, len(str); i < n; i++ {
 		r := rune(str[i])
 		if unicode.IsUpper(r) {
@@ -71,7 +69,7 @@ func (*UnderlineMapperStyle) table(str string) string {
 
 func (*UnderlineMapperStyle) column(str string) string {
 	var buf bytes.Buffer
-	buf.WriteRune(unicode.ToLower( rune(str[0])))
+	buf.WriteRune(unicode.ToLower(rune(str[0])))
 	for i, n := 1, len(str); i < n; i++ {
 		r := rune(str[i])
 		if unicode.IsUpper(r) {

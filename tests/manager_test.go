@@ -7,7 +7,7 @@ import (
 )
 
 func TestManager(t *testing.T)  {
-	manager := tinysql.NewManager()
+	manager := sprydb.NewManager()
 	configs := map[string]map[string]string{
 		"master":{
 			"username": "root",

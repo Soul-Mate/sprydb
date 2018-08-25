@@ -1,44 +1,30 @@
 package main
 
 import (
-	"log"
-	"github.com/Soul-Mate/sprydb"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/Soul-Mate/sprydb"
 	"fmt"
+	"os"
+	"time"
 )
 
-type User struct {
-	Id   int    `spry:"column:id"`
-	Name string `spry:"column:name"`
-	Show string `spry:"show"`
+type UserProfileImpl struct {
+	profile string
 }
 
-func (u *User) Table() string {
-	return "users"
+func (p *UserProfileImpl) ReadFromDB(data []byte) {
+	p.profile = string(data)
 }
 
-type PostContent struct {
-	data string
-	len  int
-}
-
-type Posts struct {
-	Id          int          `spry:"column:id"`
-	UserId      int          `spry:"column:user_id"`
-	PostContent *PostContent `spry:"column:content"`
-}
-
-func (p *Posts) Table() string {
-	return "posts"
-}
-
-func (p *PostContent) Read(data []byte) {
-	p.len = len(data)
-	p.data = string(data)
-}
-
-func (p *PostContent) Write() []byte {
+func (p *UserProfileImpl) WriteToDB() []byte {
 	return nil
+}
+
+type Users struct {
+	Id        int             `spry:"col:id"`
+	Name      string          `spry:"col:name"`
+	CreatedAt time.Time       `spry:"col:created_at"`
+	Profile   UserProfileImpl `spry:"col:profile"`
 }
 
 func main() {
@@ -46,33 +32,31 @@ func main() {
 		err  error
 		conn *sprydb.Connection
 	)
+
 	manager := sprydb.NewManager()
 	manager.AddConnection("default", map[string]string{
 		"username": "root",
 		"password": "root",
 		"host":     "127.0.0.1",
-		"port":     "33060",
+		"port":     "3306",
 		"dbname":   "test",
 		"driver":   "mysql",
 	})
 	if conn, err = manager.Connection("default"); err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "connection error: %v\n", err)
+		os.Exit(1)
 	}
-	session, err := conn.BeginTransaction(0)
-	if err != nil {
-		log.Fatal(err)
+
+	users := &Users{}
+	if err = conn.Find(1, users); err != nil {
+		fmt.Fprintf(os.Stderr, "find query error: %v\n", err)
+		os.Exit(1)
 	}
-	conn.EnableQueryLog()
-	user := User{}
-	_, err = session.Find(1, &user, "id", "name")
-	if err != nil {
-		log.Fatal(err)
+	fmt.Printf("query user: %v\n", users)
+
+	if err = conn.Find(2, users, "id", "name", "profile"); err != nil {
+		fmt.Fprintf(os.Stderr, "connection error: %v\n", err)
+		os.Exit(1)
 	}
-	fmt.Println(user)
-	post := Posts{}
-	_, err = session.Find(1, &post, "id", "user_id", "content")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(post)
+	fmt.Printf("query user: %v\n", users)
 }

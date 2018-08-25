@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"database/sql"
 	"time"
-)
+	)
 
 type ExternalField struct {
 	alias  string
@@ -81,44 +81,43 @@ func (f *Field) assignValue() {
 	case "bool":
 		*f.addr.(*bool) = f.nullBool.Bool
 	case "time":
-		var layout string
-		if tm, ok := (*f).addr.(Time); ok {
-			// 使用默认模板
-			if tm.layout == "" {
-				layout = "2006-01-02 15:04:05"
-			}
-			if t, err := time.Parse(layout, string(f.rawData)); err == nil {
-				tm.Time = t
-			}
-		} else if tm, ok := (*f).addr.(*Time); ok {
-			if tm.layout == "" {
-				layout = "2006-01-02 15:04:05"
-			}
-			if t, err := time.Parse(layout, string(f.rawData)); err == nil {
-				tm.Time = t
-			}
+		// TODO 引入配置
+		var layout = "2006-01-02 15:04:05"
+		switch (*f).addr.(type) {
+		case time.Time:
+			t, _:= time.Parse(layout, string(f.rawData))
+			(*f).addr = t
+		case *time.Time:
+			t, _:= time.Parse(layout, string(f.rawData))
+			*f.addr.(*time.Time) = t
 		}
 	case "custom":
-		(*f).addr.(Custom).Read((*f).rawData)
+		(*f).addr.(Custom).ReadFromDB((*f).rawData)
 	default:
 	}
 }
 
+// 获取字段更新操作的值
+// 会处理零值是否写入的情况
 func (f *Field) getUpdateValue() interface{} {
 	switch f.typ {
 	case "time":
+		var layout = "2006-01-02 15:04:05"
+		// go语言中字段会默认使用空值,
+		// 如果字段是空值但设置了不更新空值则跳过该字段的更新
 		if f.isZero() && !f.tag.updateZero {
 			return nil
 		}
-		if tm, ok := (*f).addr.(Time); ok {
-			return tm.Format(tm.layout)
-		}
-		if tm, ok := (*f).addr.(*Time); ok {
-			return tm.Format(tm.layout)
+		switch (*f).addr.(type) {
+		case time.Time:
+			return (*f).addr.(time.Time).Format(layout)
+		case *time.Time:
+			return (*f).addr.(*time.Time).Format(layout)
 		}
 		return nil
 	case "custom":
-		if data := (*f).addr.(Custom).Write(); len(data) <= 0 && !f.tag.updateZero {
+		// 调用自定义字段的Write
+		if data := (*f).addr.(Custom).WriteToDB(); len(data) <= 0 && !f.tag.updateZero {
 			return nil
 		} else {
 			return data
@@ -131,6 +130,8 @@ func (f *Field) getUpdateValue() interface{} {
 	}
 }
 
+// 获取字段插入操作的值
+// 默认零值是写入的
 func (f *Field) getInsertValue() interface{} {
 	switch f.typ {
 	case "time":
@@ -145,31 +146,7 @@ func (f *Field) getInsertValue() interface{} {
 		}
 		return nil
 	case "custom":
-		return (*f).addr.(Custom).Write()
-	default:
-		return (*f).addr
-	}
-}
-
-func (f *Field) getFieldValue() interface{} {
-	switch f.typ {
-	case "time":
-		if f.isZero() {
-			return nil
-		}
-		if tm, ok := (*f).addr.(Time); ok {
-			return tm.Format(tm.layout)
-		}
-		if tm, ok := (*f).addr.(*Time); ok {
-			return tm.Format(tm.layout)
-		}
-		return nil
-	case "custom":
-		if data := (*f).addr.(Custom).Write(); len(data) <= 0 {
-			return nil
-		} else {
-			return data
-		}
+		return (*f).addr.(Custom).WriteToDB()
 	default:
 		return (*f).addr
 	}

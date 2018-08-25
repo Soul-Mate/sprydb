@@ -32,14 +32,23 @@ type Session struct {
 
 func NewSession(connection *Connection) *Session {
 	session := new(Session)
-	session.connection = connection
 	session.ctx = context.Background()
-	session.binding = binding.NewBinding()
 	session.syntax = syntax.NewSyntax(connection.driver)
-	session.grammar = query.NewGrammarFactory(connection.driver, session.syntax, session.binding, connection.styler)
-	session.queryBuilder = query.NewBuilder(connection.driver, session.syntax, session.binding)
+	session.grammar = query.NewGrammarFactory(connection.driver, session.syntax, session.binding, connection.style)
+	session.binding = binding.NewBinding()
 	session.stmtCache = make(map[uint32]*sql.Stmt)
+	session.connection = connection
+	session.queryBuilder = query.NewBuilder(connection.driver, session.syntax, session.binding)
 	return session
+}
+
+func (s *Session) Close() error {
+	var err error
+	// clean stmt cache
+	for _, cache := range s.stmtCache {
+		err = cache.Close()
+	}
+	return err
 }
 
 func (s *Session) BeginTransaction(timeout time.Duration) (err error) {
@@ -210,7 +219,7 @@ func (s *Session) Take(n int) *Session {
 	return s
 }
 
-func (s *Session) Find(id int, object interface{}, column ...string) (int, error) {
+func (s *Session) Find(id int, object interface{}, column ...string) error {
 	var (
 		objMapper *mapper.Mapper
 		err       error
@@ -221,35 +230,34 @@ func (s *Session) Find(id int, object interface{}, column ...string) (int, error
 		columns   []string
 		table     string
 		alias     string
-		count     int
 	)
 
 	defer s.resetBuilder()
 
 	if err = s.queryBuilder.GetErr(); err != nil {
-		return 0, err
+		return err
 	}
 
 	if object == nil {
-		return 0, define.ObjectNoneError
+		return define.ObjectNoneError
 	}
 
 	t := reflect.TypeOf(object)
 	// 映射的对象必须是指针
 	if t.Kind() != reflect.Ptr {
-		return 0, define.UnsupportedTypeError
+		return define.UnsupportedTypeError
 	}
 
 	// 指针解引用后必须是一个struct类型
 	if t.Elem().Kind() != reflect.Struct {
-		return 0, define.UnsupportedTypeError
+		return define.UnsupportedTypeError
 	}
 
-	if objMapper, err = mapper.NewMapper(object, s.syntax, s.connection.styler); err != nil {
-		return 0, err
+	if objMapper, err = mapper.NewMapper(object, s.syntax, s.connection.style); err != nil {
+		return err
 	}
 
-	// 获取查询的table,
+	// 获取查询的table
 	buildTable := s.queryBuilder.GetTable()
 	if buildTable != "" {
 		table, alias = buildTable, s.queryBuilder.GetAlias()
@@ -257,8 +265,9 @@ func (s *Session) Find(id int, object interface{}, column ...string) (int, error
 		objMapper.SetAlias(alias)
 	}
 
+	// 解析映射对象
 	if err = objMapper.Parse(); err != nil {
-		return 0, err
+		return err
 	}
 
 	// 如果table为空,使用映射的table
@@ -266,7 +275,7 @@ func (s *Session) Find(id int, object interface{}, column ...string) (int, error
 		table, alias = objMapper.GetTable(), objMapper.GetAlias()
 	}
 
-	// prepare query column and get column mapper address
+	// 用户选择查询的列,在使用时传入
 	buildColumn := s.queryBuilder.GetColumn()
 	if len(buildColumn) <= 0 {
 		if len(column) <= 0 {
@@ -289,27 +298,25 @@ func (s *Session) Find(id int, object interface{}, column ...string) (int, error
 	}
 
 	if stmt, err = s.prepare(sqlStr); err != nil {
-		return 0, err
+		return err
 	}
 
 	if rows, err = s.query(stmt, id); err != nil {
-		return 0, err
+		return err
 	}
 
 	if !rows.Next() {
-		return 0, nil
+		return nil
 	}
 
 	if err = rows.Scan(address...); err != nil {
-		return 0, err
+		return err
 	}
 
 	// 赋值
 	objMapper.AssignAddressValue()
 
-	// query count
-	count++
-	return count, nil
+	return nil
 }
 
 func (s *Session) FindReturnMap(id int, pk string, column ...string) (map[string]interface{}, error) {
@@ -413,7 +420,7 @@ func (s *Session) First(object interface{}, column ...string) error {
 		return define.UnsupportedTypeError
 	}
 
-	if objMapper, err = mapper.NewMapper(object, s.syntax, s.connection.styler); err != nil {
+	if objMapper, err = mapper.NewMapper(object, s.syntax, s.connection.style); err != nil {
 		return err
 	}
 
@@ -435,7 +442,7 @@ func (s *Session) First(object interface{}, column ...string) error {
 		s.queryBuilder.SetAlias(objMapper.GetAlias())
 	}
 
-	// prepare column
+	// connectionStmtCache column
 	address = s.prepareGiveColumnMapper(objMapper, column...)
 
 	s.queryBuilder.Skip(0).Take(1)
@@ -560,7 +567,7 @@ func (s *Session) Get(objects interface{}, column ...string) error {
 	// create this type and get interface
 	obj = reflect.New(reflectType.Elem().Elem()).Interface()
 
-	if objMapper, err = mapper.NewMapper(obj, s.syntax, s.connection.styler); err != nil {
+	if objMapper, err = mapper.NewMapper(obj, s.syntax, s.connection.style); err != nil {
 		return err
 	}
 
@@ -786,12 +793,19 @@ func (s *Session) Exec(query string, args ...interface{}) (sql.Result, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return s.exec(stmt, args...)
 }
 
+func (s *Session) exec(stmt *sql.Stmt, bindings ...interface{}) (sql.Result, error) {
+	if s.transaction != nil {
+		return s.transaction.exec(stmt, bindings...)
+	} else {
+		return stmt.ExecContext(s.ctx, bindings...)
+	}
+}
+
 func (s *Session) prepare(query string) (*sql.Stmt, error) {
-	if stmt, err := s.connection.prepare(query); err == nil {
+	if stmt, err := s.connection.connectionStmtCache(query); err == nil {
 		return stmt, nil
 	}
 	// cal check sum
@@ -813,24 +827,6 @@ func (s *Session) query(stmt *sql.Stmt, bindings ...interface{}) (rows *sql.Rows
 		return s.transaction.query(stmt, bindings...)
 	} else {
 		return stmt.QueryContext(s.ctx, bindings...)
-	}
-}
-
-func (s *Session) exec(stmt *sql.Stmt, bindings ...interface{}) (sql.Result, error) {
-	if s.transaction != nil {
-		return s.transaction.exec(stmt, bindings...)
-	} else {
-		return stmt.ExecContext(s.ctx, bindings...)
-	}
-}
-
-func (s *Session) Close() {
-	// clean stmt cache
-	for _, cache := range s.stmtCache {
-		err := cache.Close()
-		if err != nil {
-			// TODO process error?
-		}
 	}
 }
 

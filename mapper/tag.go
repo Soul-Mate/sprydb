@@ -8,7 +8,7 @@ import (
 
 const (
 	SqlTag      = "spry"
-	ColumnTag   = "column"
+	ColumnTag   = "col"
 	UseAliasTag = "alias"
 	ExternalTag = "external"
 	UpdateZero  = "update_zero"

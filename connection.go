@@ -8,9 +8,9 @@ import (
 	"time"
 	"fmt"
 	"strconv"
-	"hash/crc32"
-	"github.com/Soul-Mate/sprydb/query"
+		"github.com/Soul-Mate/sprydb/query"
 	"github.com/Soul-Mate/sprydb/mapper"
+	"hash/crc32"
 )
 
 var (
@@ -30,7 +30,7 @@ type Connection struct {
 	DB      *sql.DB
 	cache   *sync.Map
 	logging *logging.Logging
-	styler  mapper.MapperStyler
+	style   mapper.MapperStyler
 }
 
 func NewConnection(config map[string]string) (*Connection, error) {
@@ -123,13 +123,62 @@ func buildConnectionSource(config map[string]string) (source string, err error) 
 }
 
 func (c *Connection) SetMapperStyle(style mapper.MapperStyler) {
-	c.styler = style
+	c.style = style
+}
+
+// 关闭数据库连接
+func (c *Connection) Close() error {
+	var err error
+	// 清理stmt cache
+	c.cache.Range(func(key, value interface{}) bool {
+		if err = value.(*sql.Stmt).Close(); err != nil {
+			return false
+		}
+		c.cache.Delete(key)
+		return true
+	})
+	err = c.DB.Close()
+	return err
+}
+
+// 执行原始sql
+func (c *Connection) Exec(query string, args ...interface{}) (sql.Result, error) {
+	session := NewSession(c)
+	return session.Exec(query, args...)
+}
+
+// 最上级的stmt cache
+func (c *Connection) connectionStmtCache(query string) (*sql.Stmt, error) {
+	c32 := crc32.ChecksumIEEE([]byte(query))
+	if cache, ok := c.cache.Load(c32); ok {
+		return cache.(*sql.Stmt), nil
+	}
+
+	newStmt, err := c.DB.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+
+	c.cache.Store(c32, newStmt)
+	return newStmt, nil
+}
+
+// 开启事务
+func (c *Connection) BeginTransaction(timeout time.Duration) (*Session, error) {
+	session := NewSession(c)
+	err := session.BeginTransaction(timeout)
+	return session, err
 }
 
 func (c *Connection) Table(tableName string) *Session {
 	session := NewSession(c)
 	session.Table(tableName)
 	return session
+}
+
+func (c *Connection) Find(id int, object interface{}, column ...string) (err error) {
+	session := NewSession(c)
+	return session.Find(id, object, column...)
 }
 
 func (c *Connection) Select(column ...string) *Session {
@@ -296,11 +345,6 @@ func (c *Connection) ToSql() (sqlString string, err error) {
 	return
 }
 
-func (c *Connection) Find(id int, object interface{}, column ...string) (result int, err error) {
-	session := NewSession(c)
-	return session.Find(id, object, column...)
-}
-
 func (c *Connection) First(object interface{}, column ...string) error {
 	session := NewSession(c)
 	if err := session.First(object, column...); err != nil {
@@ -317,31 +361,6 @@ func (c *Connection) Insert(value interface{}) (lastInsertId, rowsAffected int64
 func (c *Connection) Update(value interface{}) (rowsAffected int64, err error) {
 	session := NewSession(c)
 	return session.Update(value)
-}
-
-func (c *Connection) Close() error {
-	// clean stmt cache
-	c.cache.Range(func(key, value interface{}) bool {
-		value.(*sql.Stmt).Close()
-		c.cache.Delete(key)
-		return true
-	})
-	return c.DB.Close()
-}
-
-func (c *Connection) prepare(query string) (*sql.Stmt, error) {
-	// cal check sum
-	c32 := crc32.ChecksumIEEE([]byte(query))
-	// load stmt stmtCache
-	if cache, ok := c.cache.Load(c32); ok {
-		return cache.(*sql.Stmt), nil
-	}
-	newStmt, err := c.DB.Prepare(query)
-	if err != nil {
-		return nil, err
-	}
-	c.cache.Store(c32, newStmt)
-	return newStmt, nil
 }
 
 func (c *Connection) EnableQueryLog() *logging.Logging {
@@ -363,15 +382,4 @@ func (c *Connection) GetRawQueryLog() []string {
 
 func (c *Connection) GetQueryLogByIndex(index int) map[string]interface{} {
 	return c.logging.GetQueryLogByIndex(index)
-}
-
-func (c *Connection) BeginTransaction(timeout time.Duration) (*Session, error) {
-	session := NewSession(c)
-	err := session.BeginTransaction(timeout)
-	return session, err
-}
-
-func (c *Connection) Exec(query string, args ...interface{}) (sql.Result, error) {
-	session := NewSession(c)
-	return session.Exec(query, args...)
 }
