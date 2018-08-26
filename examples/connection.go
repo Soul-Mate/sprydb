@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/Soul-Mate/sprydb"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
-	"fmt"
+		"fmt"
+	"os"
 )
 
 func main()  {
@@ -22,12 +22,14 @@ func main()  {
 		"driver":   "mysql",
 	})
 	if conn, err = manager.Connection("default"); err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "get connection error: %v\n", err)
+		os.Exit(1)
 	}
 
 	defer func() {
 		if err = conn.Close(); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, "cannot db connection: %v\n", err)
+			os.Exit(1)
 		}
 	}()
 	fmt.Println(conn)

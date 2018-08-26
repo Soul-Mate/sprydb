@@ -3,15 +3,12 @@
   <component name="ChangeListManager">
     <list default="true" id="23165eda-ce12-4195-86f9-570ad54ac10c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/connection.go" beforeDir="false" afterPath="$PROJECT_DIR$/connection.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/connection.go" beforeDir="false" afterPath="$PROJECT_DIR$/examples/connection.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/find.go" beforeDir="false" afterPath="$PROJECT_DIR$/examples/find.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mapper/field.go" beforeDir="false" afterPath="$PROJECT_DIR$/mapper/field.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manager.go" beforeDir="false" afterPath="$PROJECT_DIR$/manager.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mapper/mapper.go" beforeDir="false" afterPath="$PROJECT_DIR$/mapper/mapper.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mapper/style.go" beforeDir="false" afterPath="$PROJECT_DIR$/mapper/style.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mapper/tag.go" beforeDir="false" afterPath="$PROJECT_DIR$/mapper/tag.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/session.go" beforeDir="false" afterPath="$PROJECT_DIR$/session.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/loggin_test.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/manager_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/tests/manager_test.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -54,31 +51,35 @@
     <session id="-1833120726">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
+          <entry key="project.closed" value="1" />
           <entry key="project.open.time.0" value="1" />
-          <entry key="project.opened" value="1" />
+          <entry key="project.open.time.8" value="1" />
+          <entry key="project.opened" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="go" value="27" />
+          <entry key="go" value="39" />
+          <entry key="s" value="1" />
           <entry key="sql" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Go" value="27" />
+          <entry key="Go" value="39" />
           <entry key="SQL" value="1" />
+          <entry key="x86 Plan9 Assembly" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="go" value="2622" />
+          <entry key="go" value="5795" />
           <entry key="sql" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Go" value="2622" />
+          <entry key="Go" value="5795" />
           <entry key="SQL" value="1" />
         </counts>
       </usages-collector>
@@ -87,13 +88,14 @@
     </session>
   </component>
   <component name="FileEditorManager">
-    <leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/connection.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="163">
-              <caret line="180" selection-start-line="180" selection-end-line="180" />
+            <state relative-caret-position="275">
+              <caret line="179" column="28" lean-forward="true" selection-start-line="179" selection-start-column="28" selection-end-line="179" selection-end-column="28" />
               <folding>
+                <element signature="e#788#936#0" />
                 <element signature="n#!!block;n#NewConnection#0" />
                 <element signature="n#!!block;n#buildConnectionSource#0" />
                 <element signature="n#!!block;n#SetMapperStyle#0" />
@@ -101,6 +103,7 @@
                 <element signature="n#!!block;n#Exec#0" />
                 <element signature="n#!!block;n#connectionStmtCache#0" />
                 <element signature="n#!!block;n#BeginTransaction#0" />
+                <element signature="n#!!block;n#Table#0" />
                 <element signature="n#!!block;n#Select#0" />
                 <element signature="n#!!block;n#Join#0" />
                 <element signature="n#!!block;n#JoinClosure#0" />
@@ -142,8 +145,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/session.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="229">
-              <caret line="339" column="5" lean-forward="true" selection-start-line="339" selection-start-column="5" selection-end-line="339" selection-end-column="5" />
+            <state relative-caret-position="361">
+              <caret line="283" selection-start-line="283" selection-end-line="283" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/query/builder.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="427">
+              <caret line="96" selection-start-line="96" selection-end-line="96" />
             </state>
           </provider>
         </entry>
@@ -151,121 +163,39 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mapper/mapper.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="141">
-              <caret line="549" selection-start-line="549" selection-end-line="549" />
+            <state relative-caret-position="251">
+              <caret line="241" selection-start-line="241" selection-end-line="241" />
               <folding>
-                <element signature="e#163#651#0" />
-                <element signature="e#1551#1680#0" />
-                <element signature="e#1682#1732#0" />
-                <element signature="e#1849#1878#0" />
-                <element signature="n#!!block;n#GetPK#0" />
-                <element signature="e#1990#2021#0" />
                 <element signature="n#!!block;n#GetTable#0" />
                 <element signature="n#!!block;n#SetTable#0" />
                 <element signature="n#!!block;n#GetAlias#0" />
                 <element signature="n#!!block;n#SetAlias#0" />
                 <element signature="n#!!block;n#SetJoinMap#0" />
                 <element signature="n#!!block;n#GetColumn#0" />
-                <element signature="n#!!block;n#GetAddressByColumn#0" />
-                <element signature="e#2804#2817#0" />
-                <element signature="e#2845#2964#0" />
-                <element signature="e#2907#2961#0" />
                 <element signature="n#!!block;n#parseColumn#0" />
-                <element signature="e#3079#3099#0" />
-                <element signature="e#3162#3181#0" />
                 <element signature="n#!!block;n#GetAddress#0" />
-                <element signature="e#3292#3344#0" />
                 <element signature="n#!!block;n#recursionGetColumnAndAddress#0" />
-                <element signature="e#3676#3750#1" />
-                <element signature="e#3794#3843#0" />
-                <element signature="e#3877#4242#0" />
-                <element signature="e#3909#4119#0" />
-                <element signature="e#4016#4115#0" />
-                <element signature="e#4125#4239#0" />
-                <element signature="n#!!block;n#parseFieldMapper#0" />
-                <element signature="e#5122#5187#1" />
-                <element signature="e#5229#5483#0" />
-                <element signature="e#5341#5358#0" />
-                <element signature="e#5441#5480#0" />
-                <element signature="n#!!block;n#processFieldType#0" />
-                <element signature="e#5625#6007#0" />
-                <element signature="e#5652#5799#0" />
-                <element signature="e#5801#5875#0" />
-                <element signature="e#5877#5944#0" />
-                <element signature="e#5946#6004#0" />
-                <element signature="n#!!block;n#ptrStructFieldType#0" />
-                <element signature="e#6172#6444#0" />
-                <element signature="e#6217#6388#0" />
-                <element signature="e#6466#6778#0" />
-                <element signature="e#6488#6635#0" />
-                <element signature="e#6637#6711#0" />
-                <element signature="e#6713#6775#0" />
-                <element signature="e#6957#7000#1" />
-                <element signature="e#7024#7088#0" />
-                <element signature="e#8644#9074#0" />
-                <element signature="e#8675#8709#0" />
-                <element signature="e#8715#8778#0" />
-                <element signature="e#8834#8976#0" />
-                <element signature="e#8854#8953#0" />
-                <element signature="e#8904#8948#0" />
-                <element signature="e#9047#9071#0" />
-                <element signature="e#9105#9126#0" />
-                <element signature="e#9225#9309#0" />
-                <element signature="e#9265#9305#0" />
+                <element signature="n#!!block;n#Parse#0" />
+                <element signature="n#!!block;n#parseTableMapper#0" />
                 <element signature="n#!!block;n#structCustomTypeField#0" />
-                <element signature="e#9473#9499#0" />
-                <element signature="e#9505#9603#0" />
-                <element signature="e#9524#9566#0" />
-                <element signature="e#9572#9600#0" />
-                <element signature="e#9621#9724#0" />
                 <element signature="n#!!block;n#parseStructTableAndAlias#0" />
-                <element signature="e#10532#10609#0" />
-                <element signature="e#10671#10742#0" />
-                <element signature="e#10711#10739#0" />
-                <element signature="e#10881#11079#0" />
-                <element signature="e#10949#11025#0" />
-                <element signature="e#10990#11021#0" />
-                <element signature="n#!!block;n#baseTypeField#0" />
-                <element signature="e#11207#11252#1" />
-                <element signature="e#11270#11368#0" />
-                <element signature="e#11289#11331#0" />
-                <element signature="e#11337#11365#0" />
-                <element signature="e#11374#11400#0" />
-                <element signature="e#11425#11442#0" />
-                <element signature="e#11461#11497#0" />
-                <element signature="e#11503#11532#0" />
-                <element signature="e#11550#11661#0" />
-                <element signature="n#!!block;n#sliceFieldType#0" />
+                <element signature="e#13873#13878#0" />
+                <element signature="n#!!block;n#decideColumnAddr#0" />
+                <element signature="n#!!block;n#AssignAddressValue#0" />
                 <element signature="n#!!block;n#recursionAssignAddressValue#0" />
-                <element signature="e#12322#12448#0" />
-                <element signature="e#12355#12419#0" />
                 <element signature="n#!!block;n#GetColumnsAndValues#0" />
-                <element signature="e#12566#12693#0" />
-                <element signature="e#12606#12690#0" />
                 <element signature="n#!!block;n#GetValuesByColumns#0" />
-                <element signature="e#12873#12886#0" />
-                <element signature="e#12914#13009#0" />
-                <element signature="e#12954#13006#0" />
-                <element signature="n#!!block;n#GetColumnsAndValuesNotZero#0" />
-                <element signature="e#13142#13313#0" />
-                <element signature="e#13182#13310#0" />
-                <element signature="e#13232#13306#0" />
                 <element signature="n#!!block;n#recursionGetColumnsAndValues#0" />
-                <element signature="e#13568#13581#0" />
-                <element signature="e#13615#14050#0" />
-                <element signature="e#13648#13828#0" />
-                <element signature="e#13834#14047#0" />
-                <element signature="e#13931#13950#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/mapper/field.go">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mapper/common.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="242">
-              <caret line="87" column="25" lean-forward="true" selection-start-line="87" selection-start-column="25" selection-end-line="87" selection-end-column="25" />
+            <state relative-caret-position="213">
+              <caret line="16" column="12" selection-start-line="16" selection-start-column="12" selection-end-line="16" selection-end-column="12" />
             </state>
           </provider>
         </entry>
@@ -279,32 +209,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mapper/time.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="154">
-              <caret line="7" column="1" lean-forward="true" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/define/error.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="141">
-              <caret line="10" column="69" lean-forward="true" selection-start-line="10" selection-start-column="69" selection-end-line="10" selection-end-column="69" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/examples/find.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="264">
-              <caret line="12" column="33" lean-forward="true" selection-start-line="12" selection-start-column="33" selection-end-line="12" selection-end-column="33" />
-              <folding>
-                <element signature="e#14#142#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="321">
+              <caret line="23" column="4" lean-forward="true" selection-start-line="23" selection-start-column="4" selection-end-line="28" selection-end-column="5" />
             </state>
           </provider>
         </entry>
@@ -312,8 +221,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mapper/tag.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="132">
-              <caret line="13" column="31" lean-forward="true" selection-start-line="13" selection-start-column="31" selection-end-line="13" selection-end-column="31" />
+            <state relative-caret-position="469">
+              <caret line="104" lean-forward="true" selection-start-line="104" selection-end-line="104" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://D:/dev/env/Go1.10/src/reflect/value.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="413">
+              <caret line="938" selection-start-line="938" selection-end-line="938" />
             </state>
           </provider>
         </entry>
@@ -331,6 +249,7 @@
     <findStrings>
       <find>s.prepare(s.ctx, sqlStr);</find>
       <find>\</find>
+      <find>SqlTag</find>
     </findStrings>
     <replaceStrings>
       <replace>s.prepare(sqlStr);</replace>
@@ -348,15 +267,17 @@
         <option value="$PROJECT_DIR$/query/builder.go" />
         <option value="$PROJECT_DIR$/session_transaction.go" />
         <option value="$PROJECT_DIR$/mapper/style.go" />
-        <option value="$PROJECT_DIR$/tests/manager_test.go" />
-        <option value="$PROJECT_DIR$/examples/connection.go" />
         <option value="$PROJECT_DIR$/examples/example.sql" />
         <option value="$PROJECT_DIR$/examples/exec.go" />
-        <option value="$PROJECT_DIR$/mapper/tag.go" />
         <option value="$PROJECT_DIR$/connection.go" />
+        <option value="$PROJECT_DIR$/mapper/custom.go" />
+        <option value="$PROJECT_DIR$/mapper/field.go" />
+        <option value="$PROJECT_DIR$/examples/connection.go" />
+        <option value="$PROJECT_DIR$/tests/manager_test.go" />
+        <option value="$PROJECT_DIR$/manager.go" />
         <option value="$PROJECT_DIR$/session.go" />
         <option value="$PROJECT_DIR$/mapper/mapper.go" />
-        <option value="$PROJECT_DIR$/mapper/field.go" />
+        <option value="$PROJECT_DIR$/mapper/tag.go" />
         <option value="$PROJECT_DIR$/examples/find.go" />
       </list>
     </option>
@@ -377,6 +298,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -398,7 +320,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -486,9 +407,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Go Build.go build find.go" />
+        <item itemvalue="Go Test.TestManager in github.com/Soul-Mate/sprydb/tests" />
         <item itemvalue="Go Build.go build exec.go" />
         <item itemvalue="Go Build.go build connection.go" />
-        <item itemvalue="Go Test.TestManager in github.com/Soul-Mate/sprydb/tests" />
         <item itemvalue="Go Test.TestMapper_GetColumn in github.com/Soul-Mate/sprydb/mapper" />
       </list>
     </recent_temporary>
@@ -500,12 +421,15 @@
     <history-entry file="TestManager_in_github_com_Soul-Mate_sprydb_tests - 2018.08.25 at 18h 45m 02s.xml">
       <configuration name="TestManager in github.com/Soul-Mate/sprydb/tests" configurationId="GoTestRunConfiguration" />
     </history-entry>
+    <history-entry file="TestManager_in_github_com_Soul-Mate_sprydb_tests - 2018.08.26 at 18h 12m 51s.xml">
+      <configuration name="TestManager in github.com/Soul-Mate/sprydb/tests" configurationId="GoTestRunConfiguration" />
+    </history-entry>
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.18603411" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1881663" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -517,7 +441,7 @@
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
-      <window_info anchor="bottom" id="Terminal" order="9" />
+      <window_info anchor="bottom" id="Terminal" order="9" weight="0.32903227" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -535,16 +459,16 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/session.go</url>
-          <line>224</line>
+          <url>file://$PROJECT_DIR$/examples/find.go</url>
+          <line>58</line>
           <properties />
-          <option name="timeStamp" value="8" />
+          <option name="timeStamp" value="28" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/mapper/mapper.go</url>
-          <line>550</line>
+          <line>242</line>
           <properties />
-          <option name="timeStamp" value="9" />
+          <option name="timeStamp" value="32" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -597,40 +521,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/query/builder.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2600">
-          <caret line="104" column="16" selection-start-line="104" selection-start-column="16" selection-end-line="104" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/mapper/style.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="396">
           <caret line="84" lean-forward="true" selection-start-line="84" selection-end-line="84" />
-          <folding>
-            <element signature="e#79#137#0" />
-            <element signature="n#!!block;n#table#0" />
-            <element signature="e#342#509#0" />
-            <element signature="e#346#506#0" />
-            <element signature="e#364#466#0" />
-            <element signature="e#400#459#0" />
-            <element signature="e#469#502#0" />
-            <element signature="n#!!block;n#column#0" />
-            <element signature="e#704#871#0" />
-            <element signature="e#708#868#0" />
-            <element signature="e#726#828#0" />
-            <element signature="e#762#821#0" />
-            <element signature="e#831#864#0" />
-            <element signature="n#!!block;n#table#1" />
-            <element signature="e#1096#1256#0" />
-            <element signature="e#1142#1217#0" />
-            <element signature="e#1223#1253#0" />
-            <element signature="n#!!block;n#column#1" />
-            <element signature="e#1444#1604#0" />
-            <element signature="e#1490#1565#0" />
-            <element signature="e#1571#1601#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -638,104 +532,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="704">
           <caret line="374" column="40" selection-start-line="374" selection-start-column="40" selection-end-line="374" selection-end-column="40" />
-          <folding>
-            <element signature="e#145#178#0" />
-            <element signature="n#!!block;n#Read#0" />
-            <element signature="n#!!block;n#Write#0" />
-            <element signature="n#!!block;n#TestMapper_ParseField#0" />
-            <element signature="e#428#447#0" />
-            <element signature="e#494#513#0" />
-            <element signature="e#561#580#0" />
-            <element signature="e#624#643#0" />
-            <element signature="e#692#711#0" />
-            <element signature="e#753#772#0" />
-            <element signature="n#!!block;n#parseFieldDefineColumn#0" />
-            <element signature="e#815#861#1" />
-            <element signature="e#870#1246#0" />
-            <element signature="e#1044#1243#0" />
-            <element signature="e#1377#1394#0" />
-            <element signature="e#1435#1452#0" />
-            <element signature="e#1535#1745#0" />
-            <element signature="e#1539#1742#0" />
-            <element signature="e#1709#1738#0" />
-            <element signature="e#1768#1792#0" />
-            <element signature="n#!!block;n#parseFieldIgnoreField#0" />
-            <element signature="e#1846#1892#1" />
-            <element signature="e#1901#2122#0" />
-            <element signature="e#2006#2119#0" />
-            <element signature="e#2252#2269#0" />
-            <element signature="e#2311#2328#0" />
-            <element signature="e#2411#2650#0" />
-            <element signature="e#2415#2647#0" />
-            <element signature="e#2443#2476#0" />
-            <element signature="e#2514#2549#0" />
-            <element signature="e#2614#2643#0" />
-            <element signature="e#2673#2697#0" />
-            <element signature="n#!!block;n#parseFiledPointerField#0" />
-            <element signature="e#2752#2798#1" />
-            <element signature="e#2807#2891#0" />
-            <element signature="e#3022#3039#0" />
-            <element signature="e#3080#3097#0" />
-            <element signature="e#3180#3298#0" />
-            <element signature="e#3184#3295#0" />
-            <element signature="e#3262#3291#0" />
-            <element signature="e#3342#3366#0" />
-            <element signature="n#!!block;n#parseFieldSubField#0" />
-            <element signature="e#3417#3463#1" />
-            <element signature="e#3472#3661#0" />
-            <element signature="e#3561#3658#0" />
-            <element signature="e#3788#3805#0" />
-            <element signature="e#3897#3914#0" />
-            <element signature="e#3997#4194#0" />
-            <element signature="e#4001#4191#0" />
-            <element signature="e#4158#4187#0" />
-            <element signature="e#4217#4241#0" />
-            <element signature="n#!!block;n#parseFieldExternalField#0" />
-            <element signature="e#4297#4343#1" />
-            <element signature="e#4352#4698#0" />
-            <element signature="e#4442#4677#0" />
-            <element signature="e#4568#4647#0" />
-            <element signature="e#4830#4847#0" />
-            <element signature="e#4888#4905#0" />
-            <element signature="e#4988#5221#0" />
-            <element signature="e#4992#5218#0" />
-            <element signature="e#5185#5214#0" />
-            <element signature="e#5244#5268#0" />
-            <element signature="n#!!block;n#parseCustomField#0" />
-            <element signature="e#5317#5363#1" />
-            <element signature="e#5372#5731#0" />
-            <element signature="e#5462#5697#0" />
-            <element signature="e#5588#5667#0" />
-            <element signature="e#5856#5873#0" />
-            <element signature="e#5965#5982#0" />
-            <element signature="e#6065#6320#0" />
-            <element signature="e#6069#6317#0" />
-            <element signature="e#6284#6313#0" />
-            <element signature="e#6344#6368#0" />
-            <element signature="n#!!block;n#TestMapper_GetPK#0" />
-            <element signature="e#6505#6524#0" />
-            <element signature="e#6552#6592#0" />
-            <element signature="n#!!block;n#TestMapper_GetTable#0" />
-            <element signature="e#6720#6739#0" />
-            <element signature="e#6771#6811#0" />
-            <element signature="e#6888#6907#0" />
-            <element signature="e#6969#7009#0" />
-            <element signature="n#!!block;n#TestMapper_GetAlias#0" />
-            <element signature="e#7153#7172#0" />
-            <element signature="e#7226#7266#0" />
-            <element signature="e#7296#7336#0" />
-            <element signature="n#!!block;n#TestMapper_GetColumn#0" />
-            <element signature="e#7383#7429#1" />
-            <element signature="e#7438#7809#0" />
-            <element signature="e#7528#7771#0" />
-            <element signature="e#7654#7741#0" />
-            <element signature="e#7875#7894#0" />
-            <element signature="e#7962#7981#0" />
-            <element signature="e#8004#8137#0" />
-            <element signature="e#8200#8271#0" />
-            <element signature="e#8222#8268#0" />
-            <element signature="e#8295#8339#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -746,13 +542,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/tests/loggin_test.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="132">
-          <caret line="6" column="40" selection-start-line="6" selection-start-column="40" selection-end-line="6" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/loggin_test.go" />
     <entry file="file://$PROJECT_DIR$/tests/find_test.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="264">
@@ -760,41 +550,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/manager.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="462">
-          <caret line="35" column="1" lean-forward="true" selection-start-line="35" selection-start-column="1" selection-end-line="35" selection-end-column="1" />
-          <folding>
-            <element signature="n#!!block;n#Connection#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tests/manager_test.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="88">
-          <caret line="8" column="32" lean-forward="true" selection-start-line="8" selection-start-column="32" selection-end-line="8" selection-end-column="32" />
-          <folding>
-            <element signature="e#211#907#0" />
-            <element signature="e#969#1251#0" />
-            <element signature="e#1023#1044#0" />
-            <element signature="e#1050#1071#0" />
-            <element signature="e#1190#1248#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/examples/example.sql">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="132">
           <caret line="6" column="37" lean-forward="true" selection-start-line="6" selection-start-column="37" selection-end-line="6" selection-end-column="37" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/examples/connection.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="55">
-          <caret line="16" column="27" lean-forward="true" selection-start-line="16" selection-start-column="27" selection-end-line="16" selection-end-column="27" />
         </state>
       </provider>
     </entry>
@@ -819,17 +578,92 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mapper/tag.go">
+    <entry file="file://D:/dev/env/Go1.10/src/time/time.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="132">
-          <caret line="13" column="31" lean-forward="true" selection-start-line="13" selection-start-column="31" selection-end-line="13" selection-end-column="31" />
+        <state relative-caret-position="295">
+          <caret line="1042" column="5" selection-start-line="1042" selection-start-column="5" selection-end-line="1042" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapper/field.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1936">
+          <caret line="92" column="9" selection-start-line="92" selection-start-column="9" selection-end-line="92" selection-end-column="9" />
+          <folding>
+            <element signature="n#!!block;n#getUpdateValue#0" />
+            <element signature="n#!!block;n#getInsertValue#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapper/time.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="7" column="1" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/define/error.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="141">
-          <caret line="10" column="69" lean-forward="true" selection-start-line="10" selection-start-column="69" selection-end-line="10" selection-end-column="69" />
+        <state relative-caret-position="154">
+          <caret line="10" column="69" selection-start-line="10" selection-start-column="69" selection-end-line="10" selection-end-column="69" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/manager_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="555">
+          <caret line="55" column="9" lean-forward="true" selection-start-line="55" selection-start-column="9" selection-end-line="55" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/connection.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="660">
+          <caret line="35" column="1" lean-forward="true" selection-start-line="35" selection-start-column="1" selection-end-line="35" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/manager.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="462">
+          <caret line="49" lean-forward="true" selection-start-line="49" selection-end-line="49" />
+          <folding>
+            <element signature="n#!!block;n#NewManager#0" />
+            <element signature="n#!!block;n#Connection#0" />
+            <element signature="n#!!block;n#AddConnection#0" />
+            <element signature="n#!!block;n#AddMultiConnection#0" />
+            <element signature="e#771#776#0" />
+            <element signature="n#!!block;n#DeleteConnection#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/query/builder.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="427">
+          <caret line="96" selection-start-line="96" selection-end-line="96" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapper/custom.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="110">
+          <caret line="5" column="1" lean-forward="true" selection-start-line="5" selection-start-column="1" selection-end-line="5" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapper/common.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="213">
+          <caret line="16" column="12" selection-start-line="16" selection-start-column="12" selection-end-line="16" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/session.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="361">
+          <caret line="283" selection-start-line="283" selection-end-line="283" />
         </state>
       </provider>
     </entry>
@@ -840,11 +674,55 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://D:/dev/env/Go1.10/src/runtime/asm_amd64.s">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="281">
+          <caret line="2365" column="73" lean-forward="true" selection-start-line="2365" selection-start-column="73" selection-end-line="2365" selection-end-column="73" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://D:/dev/env/Go1.10/src/reflect/value.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="413">
+          <caret line="938" selection-start-line="938" selection-end-line="938" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapper/mapper.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="251">
+          <caret line="241" selection-start-line="241" selection-end-line="241" />
+          <folding>
+            <element signature="n#!!block;n#GetTable#0" />
+            <element signature="n#!!block;n#SetTable#0" />
+            <element signature="n#!!block;n#GetAlias#0" />
+            <element signature="n#!!block;n#SetAlias#0" />
+            <element signature="n#!!block;n#SetJoinMap#0" />
+            <element signature="n#!!block;n#GetColumn#0" />
+            <element signature="n#!!block;n#parseColumn#0" />
+            <element signature="n#!!block;n#GetAddress#0" />
+            <element signature="n#!!block;n#recursionGetColumnAndAddress#0" />
+            <element signature="n#!!block;n#Parse#0" />
+            <element signature="n#!!block;n#parseTableMapper#0" />
+            <element signature="n#!!block;n#structCustomTypeField#0" />
+            <element signature="n#!!block;n#parseStructTableAndAlias#0" />
+            <element signature="e#13873#13878#0" />
+            <element signature="n#!!block;n#decideColumnAddr#0" />
+            <element signature="n#!!block;n#AssignAddressValue#0" />
+            <element signature="n#!!block;n#recursionAssignAddressValue#0" />
+            <element signature="n#!!block;n#GetColumnsAndValues#0" />
+            <element signature="n#!!block;n#GetValuesByColumns#0" />
+            <element signature="n#!!block;n#recursionGetColumnsAndValues#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/connection.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="163">
-          <caret line="180" selection-start-line="180" selection-end-line="180" />
+        <state relative-caret-position="275">
+          <caret line="179" column="28" lean-forward="true" selection-start-line="179" selection-start-column="28" selection-end-line="179" selection-end-column="28" />
           <folding>
+            <element signature="e#788#936#0" />
             <element signature="n#!!block;n#NewConnection#0" />
             <element signature="n#!!block;n#buildConnectionSource#0" />
             <element signature="n#!!block;n#SetMapperStyle#0" />
@@ -852,6 +730,7 @@
             <element signature="n#!!block;n#Exec#0" />
             <element signature="n#!!block;n#connectionStmtCache#0" />
             <element signature="n#!!block;n#BeginTransaction#0" />
+            <element signature="n#!!block;n#Table#0" />
             <element signature="n#!!block;n#Select#0" />
             <element signature="n#!!block;n#Join#0" />
             <element signature="n#!!block;n#JoinClosure#0" />
@@ -889,159 +768,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mapper/time.go">
+    <entry file="file://$PROJECT_DIR$/mapper/tag.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="154">
-          <caret line="7" column="1" lean-forward="true" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://D:/dev/env/Go1.10/src/time/time.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="295">
-          <caret line="1042" column="5" selection-start-line="1042" selection-start-column="5" selection-end-line="1042" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mapper/custom.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="110">
-          <caret line="5" column="1" lean-forward="true" selection-start-line="5" selection-start-column="1" selection-end-line="5" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mapper/mapper.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="141">
-          <caret line="549" selection-start-line="549" selection-end-line="549" />
-          <folding>
-            <element signature="e#163#651#0" />
-            <element signature="e#1551#1680#0" />
-            <element signature="e#1682#1732#0" />
-            <element signature="e#1849#1878#0" />
-            <element signature="n#!!block;n#GetPK#0" />
-            <element signature="e#1990#2021#0" />
-            <element signature="n#!!block;n#GetTable#0" />
-            <element signature="n#!!block;n#SetTable#0" />
-            <element signature="n#!!block;n#GetAlias#0" />
-            <element signature="n#!!block;n#SetAlias#0" />
-            <element signature="n#!!block;n#SetJoinMap#0" />
-            <element signature="n#!!block;n#GetColumn#0" />
-            <element signature="n#!!block;n#GetAddressByColumn#0" />
-            <element signature="e#2804#2817#0" />
-            <element signature="e#2845#2964#0" />
-            <element signature="e#2907#2961#0" />
-            <element signature="n#!!block;n#parseColumn#0" />
-            <element signature="e#3079#3099#0" />
-            <element signature="e#3162#3181#0" />
-            <element signature="n#!!block;n#GetAddress#0" />
-            <element signature="e#3292#3344#0" />
-            <element signature="n#!!block;n#recursionGetColumnAndAddress#0" />
-            <element signature="e#3676#3750#1" />
-            <element signature="e#3794#3843#0" />
-            <element signature="e#3877#4242#0" />
-            <element signature="e#3909#4119#0" />
-            <element signature="e#4016#4115#0" />
-            <element signature="e#4125#4239#0" />
-            <element signature="n#!!block;n#parseFieldMapper#0" />
-            <element signature="e#5122#5187#1" />
-            <element signature="e#5229#5483#0" />
-            <element signature="e#5341#5358#0" />
-            <element signature="e#5441#5480#0" />
-            <element signature="n#!!block;n#processFieldType#0" />
-            <element signature="e#5625#6007#0" />
-            <element signature="e#5652#5799#0" />
-            <element signature="e#5801#5875#0" />
-            <element signature="e#5877#5944#0" />
-            <element signature="e#5946#6004#0" />
-            <element signature="n#!!block;n#ptrStructFieldType#0" />
-            <element signature="e#6172#6444#0" />
-            <element signature="e#6217#6388#0" />
-            <element signature="e#6466#6778#0" />
-            <element signature="e#6488#6635#0" />
-            <element signature="e#6637#6711#0" />
-            <element signature="e#6713#6775#0" />
-            <element signature="e#6957#7000#1" />
-            <element signature="e#7024#7088#0" />
-            <element signature="e#8644#9074#0" />
-            <element signature="e#8675#8709#0" />
-            <element signature="e#8715#8778#0" />
-            <element signature="e#8834#8976#0" />
-            <element signature="e#8854#8953#0" />
-            <element signature="e#8904#8948#0" />
-            <element signature="e#9047#9071#0" />
-            <element signature="e#9105#9126#0" />
-            <element signature="e#9225#9309#0" />
-            <element signature="e#9265#9305#0" />
-            <element signature="n#!!block;n#structCustomTypeField#0" />
-            <element signature="e#9473#9499#0" />
-            <element signature="e#9505#9603#0" />
-            <element signature="e#9524#9566#0" />
-            <element signature="e#9572#9600#0" />
-            <element signature="e#9621#9724#0" />
-            <element signature="n#!!block;n#parseStructTableAndAlias#0" />
-            <element signature="e#10532#10609#0" />
-            <element signature="e#10671#10742#0" />
-            <element signature="e#10711#10739#0" />
-            <element signature="e#10881#11079#0" />
-            <element signature="e#10949#11025#0" />
-            <element signature="e#10990#11021#0" />
-            <element signature="n#!!block;n#baseTypeField#0" />
-            <element signature="e#11207#11252#1" />
-            <element signature="e#11270#11368#0" />
-            <element signature="e#11289#11331#0" />
-            <element signature="e#11337#11365#0" />
-            <element signature="e#11374#11400#0" />
-            <element signature="e#11425#11442#0" />
-            <element signature="e#11461#11497#0" />
-            <element signature="e#11503#11532#0" />
-            <element signature="e#11550#11661#0" />
-            <element signature="n#!!block;n#sliceFieldType#0" />
-            <element signature="n#!!block;n#recursionAssignAddressValue#0" />
-            <element signature="e#12322#12448#0" />
-            <element signature="e#12355#12419#0" />
-            <element signature="n#!!block;n#GetColumnsAndValues#0" />
-            <element signature="e#12566#12693#0" />
-            <element signature="e#12606#12690#0" />
-            <element signature="n#!!block;n#GetValuesByColumns#0" />
-            <element signature="e#12873#12886#0" />
-            <element signature="e#12914#13009#0" />
-            <element signature="e#12954#13006#0" />
-            <element signature="n#!!block;n#GetColumnsAndValuesNotZero#0" />
-            <element signature="e#13142#13313#0" />
-            <element signature="e#13182#13310#0" />
-            <element signature="e#13232#13306#0" />
-            <element signature="n#!!block;n#recursionGetColumnsAndValues#0" />
-            <element signature="e#13568#13581#0" />
-            <element signature="e#13615#14050#0" />
-            <element signature="e#13648#13828#0" />
-            <element signature="e#13834#14047#0" />
-            <element signature="e#13931#13950#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/session.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="229">
-          <caret line="339" column="5" lean-forward="true" selection-start-line="339" selection-start-column="5" selection-end-line="339" selection-end-column="5" />
+        <state relative-caret-position="469">
+          <caret line="104" lean-forward="true" selection-start-line="104" selection-end-line="104" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/examples/find.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="264">
-          <caret line="12" column="33" lean-forward="true" selection-start-line="12" selection-start-column="33" selection-end-line="12" selection-end-column="33" />
-          <folding>
-            <element signature="e#14#142#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mapper/field.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="242">
-          <caret line="87" column="25" lean-forward="true" selection-start-line="87" selection-start-column="25" selection-end-line="87" selection-end-column="25" />
+        <state relative-caret-position="321">
+          <caret line="23" column="4" lean-forward="true" selection-start-line="23" selection-start-column="4" selection-end-line="28" selection-end-column="5" />
         </state>
       </provider>
     </entry>

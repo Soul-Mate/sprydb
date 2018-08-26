@@ -50,7 +50,10 @@ func TestManager(t *testing.T)  {
 		}
 
 		// delete
-		manager.DeleteConnection(k)
+		err := manager.DeleteConnection(k)
+		if err != nil {
+			t.Error(err)
+		}
 
 		// delete after get
 		if conn, err := manager.Connection(k); err == nil {

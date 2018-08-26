@@ -291,7 +291,7 @@ func (s *Session) Find(id int, object interface{}, column ...string) error {
 
 	// builder find sql
 	sqlStr = s.grammar.CompileFind(s.queryBuilder.GetDistinct(), columns, table, alias, objMapper.GetPK())
-
+	println(sqlStr)
 	// 追加查询sql日志
 	if s.connection.logging != nil {
 		defer s.connection.logging.Append(sqlStr, id)

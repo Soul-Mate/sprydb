@@ -21,10 +21,16 @@ func (p *UserProfileImpl) WriteToDB() []byte {
 }
 
 type Users struct {
-	Id        int             `spry:"col:id"`
-	Name      string          `spry:"col:name"`
-	CreatedAt time.Time       `spry:"col:created_at"`
-	Profile   UserProfileImpl `spry:"col:profile"`
+	Id    int
+	Name  string `spry:"col:name"`
+	Other struct {
+		Other struct{
+			Other struct{
+				CreatedAt time.Time       `spry:"col:created_at;use_alias:false;"`
+				Profile   UserProfileImpl `spry:"col:profile"`
+			}
+		}
+	}
 }
 
 func main() {
@@ -54,7 +60,7 @@ func main() {
 	}
 	fmt.Printf("query user: %v\n", users)
 
-	if err = conn.Find(2, users, "id", "name", "profile"); err != nil {
+	if err = conn.Table("users as a").Find(2, users, "a.name", "a.profile", "created_at"); err != nil {
 		fmt.Fprintf(os.Stderr, "connection error: %v\n", err)
 		os.Exit(1)
 	}

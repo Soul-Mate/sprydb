@@ -80,7 +80,12 @@ func NewMapper(object interface{}, syntax syntax.Syntax, styler MapperStyler) (*
 
 func (m *Mapper) GetPK() string {
 	if m.pk == "" {
-		m.pk = CallPKMethod(m.v)
+		pk := CallPKMethod(m.v)
+		if m.alias != "" {
+			m.pk = m.alias + "." + pk
+		} else {
+			m.pk = pk
+		}
 	}
 	return m.pk
 }
@@ -235,7 +240,7 @@ func (m *Mapper) parseFieldMapper(t reflect.Type, v reflect.Value, alias string)
 			continue
 		}
 		// 处理字段类型
-		if field, err := m.processFieldType(ff, fv, tag, alias); err == nil {
+		if field, err := m.processField(ff, fv, tag, alias); err == nil {
 			fields = append(fields, field)
 		}
 	}
@@ -243,7 +248,7 @@ func (m *Mapper) parseFieldMapper(t reflect.Type, v reflect.Value, alias string)
 }
 
 // 处理字段类型
-func (m *Mapper) processFieldType(ff reflect.StructField, fv reflect.Value,
+func (m *Mapper) processField(ff reflect.StructField, fv reflect.Value,
 	tag *Tag, alias string) (*Field, error) {
 	switch fv.Type().Kind() {
 	case
@@ -254,13 +259,14 @@ func (m *Mapper) processFieldType(ff reflect.StructField, fv reflect.Value,
 	case reflect.Struct:
 		return m.structTypeField(ff, fv, tag, false, alias)
 	case reflect.Ptr:
-		return m.ptrStructFieldType(ff, fv, tag, alias)
+		return m.processPtrField(ff, fv, tag, alias)
 	default:
-		return m.baseTypeField(ff, fv, tag, alias), nil
+		return m.basicTypeField(ff, fv, tag, alias)
 	}
 }
 
-func (m *Mapper) ptrStructFieldType(ff reflect.StructField, pfv reflect.Value,
+// 处理指针字段类型
+func (m *Mapper) processPtrField(ff reflect.StructField, pfv reflect.Value,
 	tag *Tag, alias string) (*Field, error) {
 	// 如果是一个空指针
 	if !pfv.Elem().IsValid() {
@@ -283,7 +289,7 @@ func (m *Mapper) ptrStructFieldType(ff reflect.StructField, pfv reflect.Value,
 	case reflect.Struct:
 		return m.structTypeField(ff, pfv, tag, true, alias)
 	default:
-		return m.baseTypeField(ff, elem, tag, m.alias), nil
+		return m.basicTypeField(ff, elem, tag, m.alias)
 	}
 }
 
@@ -291,32 +297,10 @@ func (m *Mapper) ptrStructFieldType(ff reflect.StructField, pfv reflect.Value,
 // 如果ptr是true, ff 和 fv是指针类型
 func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 	tag *Tag, ptr bool, alias string) (*Field, error) {
-	var (
-		addr  interface{}
-		table string
-	)
-
-	// 非指针字段 获取字段的地址
-	if !ptr {
-		if fv.CanAddr() {
-			// 不能获取指针字段的地址
-			if !fv.Addr().CanInterface() {
-				return nil, errors.New("the field cannot get interface")
-			}
-			addr = fv.Addr().Interface()
-
-		} else {
-			// 不能获取地址
-			if !fv.CanInterface() {
-				return nil, errors.New("the field cannot get interface")
-			}
-			addr = fv.Interface()
-		}
-	} else {
-		if !fv.CanInterface() {
-			return nil, errors.New("the field cannot get interface")
-		}
-		addr = fv.Interface()
+	var table string
+	addr, err := m.decideColumnAddr(ptr, fv)
+	if err != nil {
+		return nil, err
 	}
 
 	// 特殊类型字段进行特殊处理
@@ -494,17 +478,7 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 // 自定义类型
 func (m *Mapper) structCustomTypeField(fv reflect.Value,
 	addr interface{}, tag *Tag, alias string) *Field {
-	var column string
-	if !tag.useAlias {
-		column = tag.column
-	} else {
-		if alias != "" {
-			column = alias + "." + tag.column
-		} else {
-			column = tag.column
-		}
-	}
-
+	column := m.decideColumnName(tag, alias)
 	field := &Field{
 		tag:       tag,
 		addr:      addr,
@@ -520,17 +494,7 @@ func (m *Mapper) structCustomTypeField(fv reflect.Value,
 // time类型
 func (m *Mapper) structTimeTypeField(fv reflect.Value,
 	addr interface{}, tag *Tag, alias string) *Field {
-	var column string
-	if !tag.useAlias {
-		column = tag.column
-	} else {
-		if alias != "" {
-			column = alias + "." + tag.column
-		} else {
-			column = tag.column
-		}
-	}
-
+	column := m.decideColumnName(tag, alias)
 	field := &Field{
 		tag:       tag,
 		addr:      addr,
@@ -579,41 +543,23 @@ func (m *Mapper) parseStructTableAndAlias(ff reflect.StructField, fv reflect.Val
 }
 
 // 处理基本类型
-func (m *Mapper) baseTypeField(f reflect.StructField, fv reflect.Value, tag *Tag, alias string) *Field {
-	var (
-		column string
-		iface  interface{}
-	)
-	if tag.useAlias {
-		if alias != "" {
-			column = alias + "." + tag.column
-		} else {
-			column = tag.column
-		}
-	} else {
-		column = tag.column
-	}
-
-	if !fv.CanInterface() {
-		return nil
-	}
-
-	if fv.CanAddr() {
-		iface = fv.Addr().Interface()
-	} else {
-		iface = fv.Interface()
+func (m *Mapper) basicTypeField(f reflect.StructField, fv reflect.Value, tag *Tag, alias string) (*Field, error) {
+	column := m.decideColumnName(tag, alias)
+	addr, err := m.decideColumnAddr(false, fv)
+	if err != nil {
+		return nil, err
 	}
 
 	field := &Field{
 		tag:       tag,
 		typ:       f.Type.String(),
 		tagString: column,
-		addr:      iface,
+		addr:      addr,
 		v:         &fv,
 	}
 	m.tagFieldMapper[column] = field
 	m.orderFName = append(m.orderFName, column)
-	return field
+	return field, nil
 }
 
 // 处理slice类型
@@ -626,6 +572,46 @@ func (m *Mapper) sliceFieldType(f reflect.StructField, fv reflect.Value, tag *Ta
 	//	fmt.Println(m.processDefaultFieldType(f, fv, tag, alias))
 	//}
 	//return nil, nil
+}
+
+// 决定列的名称
+func (m *Mapper) decideColumnName(tag *Tag, alias string) string {
+	if tag.useAlias {
+		if alias == "" {
+			return tag.column
+		}
+
+		return alias + "." + tag.column
+	}
+	return tag.column
+}
+
+// 决定列的地址
+func (m *Mapper) decideColumnAddr(ptr bool, fv reflect.Value) (interface{}, error) {
+	// 非指针字段 获取字段的地址
+	if !ptr {
+		var addr interface{}
+		if fv.CanAddr() {
+			// 不能获取指针字段的地址
+			if !fv.Addr().CanInterface() {
+				return nil, errors.New("the field cannot get interface")
+			}
+			addr = fv.Addr().Interface()
+
+		} else {
+			// 不能获取地址
+			if !fv.CanInterface() {
+				return nil, errors.New("the field cannot get interface")
+			}
+			addr = fv.Interface()
+		}
+		return addr, nil
+	} else {
+		if !fv.CanInterface() {
+			return nil, errors.New("the field cannot get interface")
+		}
+		return fv.Interface(), nil
+	}
 }
 
 // 为映射对象中的字段地址赋值
