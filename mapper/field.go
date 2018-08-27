@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"database/sql"
 	"time"
-)
+	)
 
 type ExtendField struct {
 	alias  string
@@ -25,9 +25,20 @@ type Field struct {
 	extend      *ExtendField
 }
 
+func newNullTypeField(tag *Tag) *Field {
+	return &Field{
+		tag:       tag,
+		addr:      nil,
+		typ:       "null",
+		tagString: tag.column,
+		fv:        nil,
+	}
+}
+
 // get sql.Null<T> type pointer
-func (f *Field) getSqlNullType() interface{} {
+func (f *Field) getFieldAddr() interface{} {
 	switch f.typ {
+
 	case
 		"int", "uint",
 		"int8", "uint8",
@@ -42,6 +53,8 @@ func (f *Field) getSqlNullType() interface{} {
 	case "bool":
 		return &f.nullBool
 	case "custom", "time":
+		return &f.raw
+	case "raw":
 		return &f.raw
 	default:
 		return &f.addr
@@ -91,6 +104,9 @@ func (f *Field) assignValue() {
 		}
 	case "custom":
 		(*f).addr.(Custom).ReadFromDB((*f).raw)
+	case "raw":
+		*f.addr.(*[]byte) = make([]byte, len(f.raw))
+		*f.addr.(*[]byte) = f.raw
 	default:
 	}
 }
@@ -169,4 +185,28 @@ func (f *Field) isZero() bool {
 		return f.fv.IsNil()
 	}
 	return reflect.DeepEqual(f.fv.Interface(), reflect.Zero(f.fv.Type()).Interface())
+}
+
+type fieldMap struct {
+	// k-field映射集合
+	m map[string]*Field
+	// m的有序k的数组
+	k []string
+}
+
+func (fm *fieldMap) add(k string, f *Field) {
+	fm.m[k] = f
+	fm.k = append(fm.k, k)
+}
+
+func (fm *fieldMap) len() int {
+	return len(fm.m)
+}
+
+func (fm *fieldMap) get(k string) (*Field, bool) {
+	if f, ok := fm.m[k]; ok {
+		return f, ok
+	} else {
+		return nil, false
+	}
 }

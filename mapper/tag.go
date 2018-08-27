@@ -29,7 +29,7 @@ type Tag struct {
 	f           *reflect.StructField
 }
 
-func NewTag(field *reflect.StructField, fieldValue *reflect.Value) *Tag {
+func newTag(field *reflect.StructField, fieldValue *reflect.Value) *Tag {
 	tag := new(Tag)
 	tag.f = field
 	tag.fv = fieldValue

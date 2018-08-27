@@ -24,10 +24,12 @@ type Users struct {
 	Id    int
 	Name  string `spry:"col:name"`
 	CreatedAt time.Time       `spry:"col:created_at;use_alias:false;"`
-	Profile   *UserProfileImpl `spry:"col:profile"`
+	//Profile   *UserProfileImpl `spry:"col:profile"`
+	Profile   []byte `spry:"col:profile"`
 }
 
 func main() {
+
 	var (
 		err  error
 		conn *sprydb.Connection
@@ -38,9 +40,10 @@ func main() {
 		"username": "root",
 		"password": "root",
 		"host":     "127.0.0.1",
-		"port":     "33060",
+		"port":     "3306",
 		"dbname":   "test",
 		"driver":   "mysql",
+
 	})
 	if conn, err = manager.Connection("default"); err != nil {
 		fmt.Fprintf(os.Stderr, "connection error: %v\n", err)
@@ -52,7 +55,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "find query error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("query user: %v\n", users)
+	fmt.Printf("query user: %v\n", users.Profile)
 
 	if err = conn.Table("users as a").Find(2, users, "a.name", "a.profile", "created_at"); err != nil {
 		fmt.Fprintf(os.Stderr, "connection error: %v\n", err)

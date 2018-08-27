@@ -10,6 +10,7 @@ var (
 	InsertPointerDeferenceTypeError = errors.New("the pointer must be a structure after dereference")
 	MultiInsertNoObjectError        = errors.New("no objects to insert")
 	NullPointerAndNotAssign         = errors.New("this field is a null pointer and cannot be assigned")
+	FieldSliceTypeError             = errors.New("the slice type field only support uint8")
 )
 
 var (

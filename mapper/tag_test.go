@@ -22,7 +22,7 @@ func TestNewTag(t *testing.T) {
 	for i := 0; i< objType.NumField(); i++ {
 		pff := objType.Field(i)
 		pfv := objValue.Field(i)
-		tag := NewTag(&pff, &pfv)
+		tag := newTag(&pff, &pfv)
 		tag.parse(style.column)
 	}
 }
