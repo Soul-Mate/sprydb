@@ -4,26 +4,25 @@ import (
 	"reflect"
 	"database/sql"
 	"time"
-	)
+)
 
-type ExternalField struct {
+type ExtendField struct {
 	alias  string
 	fields *[]*Field
 }
 
-// if field type is Custom, the field holder value is rawData
 type Field struct {
 	typ         string
 	tagString   string
 	addr        interface{}
-	v           *reflect.Value
+	fv          *reflect.Value
 	tag         *Tag
-	rawData     []byte
+	raw         []byte
 	nullInt64   sql.NullInt64
 	nullFloat64 sql.NullFloat64
 	nullString  sql.NullString
 	nullBool    sql.NullBool
-	external    *ExternalField
+	extend      *ExtendField
 }
 
 // get sql.Null<T> type pointer
@@ -43,13 +42,12 @@ func (f *Field) getSqlNullType() interface{} {
 	case "bool":
 		return &f.nullBool
 	case "custom", "time":
-		return &f.rawData
+		return &f.raw
 	default:
 		return &f.addr
 	}
 }
 
-// get the value from the previous sql.Null<T> and assign it to the address stored in the field
 func (f *Field) assignValue() {
 	switch f.typ {
 	case "int":
@@ -85,14 +83,14 @@ func (f *Field) assignValue() {
 		var layout = "2006-01-02 15:04:05"
 		switch (*f).addr.(type) {
 		case time.Time:
-			t, _:= time.Parse(layout, string(f.rawData))
+			t, _ := time.Parse(layout, string(f.raw))
 			(*f).addr = t
 		case *time.Time:
-			t, _:= time.Parse(layout, string(f.rawData))
+			t, _ := time.Parse(layout, string(f.raw))
 			*f.addr.(*time.Time) = t
 		}
 	case "custom":
-		(*f).addr.(Custom).ReadFromDB((*f).rawData)
+		(*f).addr.(Custom).ReadFromDB((*f).raw)
 	default:
 	}
 }
@@ -147,25 +145,28 @@ func (f *Field) getInsertValue() interface{} {
 		return nil
 	case "custom":
 		return (*f).addr.(Custom).WriteToDB()
+	case "null":
+		return nil
 	default:
 		return (*f).addr
 	}
 }
 
+// 判断字段的值是否是零值
 func (f *Field) isZero() bool {
-	switch f.v.Kind() {
+	switch f.fv.Kind() {
 	case reflect.String:
-		return f.v.Len() == 0
+		return f.fv.Len() == 0
 	case reflect.Bool:
-		return !f.v.Bool()
+		return !f.fv.Bool()
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return f.v.Int() == 0
+		return f.fv.Int() == 0
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return f.v.Uint() == 0
+		return f.fv.Uint() == 0
 	case reflect.Float32, reflect.Float64:
-		return f.v.Float() == 0
+		return f.fv.Float() == 0
 	case reflect.Interface, reflect.Ptr:
-		return f.v.IsNil()
+		return f.fv.IsNil()
 	}
-	return reflect.DeepEqual(f.v.Interface(), reflect.Zero(f.v.Type()).Interface())
+	return reflect.DeepEqual(f.fv.Interface(), reflect.Zero(f.fv.Type()).Interface())
 }

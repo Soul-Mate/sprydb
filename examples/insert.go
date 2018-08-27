@@ -4,25 +4,37 @@ import (
 	"log"
 	"github.com/Soul-Mate/sprydb"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/Soul-Mate/sprydb/mapper"
 	"fmt"
 	"time"
 )
 
+type UserProfileImpl struct {
+	profile string
+}
+
+func (p *UserProfileImpl) ReadFromDB(data []byte) {
+	p.profile = string(data)
+
+}
+
+func (p *UserProfileImpl) WriteToDB() []byte {
+	return []byte(p.profile)
+}
+
 type Users struct {
 	Id        int
-	Name      string
-	Show      int
-	Flag   int
-	CreatedAt mapper.Time
+	Name      string          `spry:"col:name"`
+	CreatedAt time.Time       `spry:"col:created_at;use_alias:false;"`
+	Profile   *UserProfileImpl `spry:"col:profile"`
 }
+
 
 func main() {
 	var (
 		err  error
-		conn *tinysql.Connection
+		conn *sprydb.Connection
 	)
-	manager := tinysql.NewManager()
+	manager := sprydb.NewManager()
 	manager.AddConnection("default", map[string]string{
 		"username": "root",
 		"password": "root",
@@ -41,20 +53,16 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("inser %d record, id: %d\n", id, record)
-	id, record, err = conn.Insert([]Users{
-		{
-			Name:"Object1",
-			Show:0,
-		},
-		{
-			Name:"Object2",
-			Show:1,
-		},
-		{
-			Name:"Object3",
-			Show:1,
-			CreatedAt: *mapper.NewTime(time.Now(), "2006-01-02 15:04:05"),
-		},
-	})
-	fmt.Printf("inser %d record, id: %d\n", id, record)
+	//id, record, err = conn.Insert([]Users{
+	//	{
+	//		Name: "Object1",
+	//	},
+	//	{
+	//		Name: "Object2",
+	//	},
+	//	{
+	//		Name: "Object3",
+	//	},
+	//})
+	//fmt.Printf("inser %d record, id: %d\n", id, record)
 }

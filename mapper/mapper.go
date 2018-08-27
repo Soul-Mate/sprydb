@@ -3,29 +3,22 @@ package mapper
 import (
 	"reflect"
 	"github.com/Soul-Mate/sprydb/define"
-	"fmt"
-	"errors"
+		"errors"
 	"regexp"
 	"github.com/Soul-Mate/sprydb/syntax"
 	"time"
+	"fmt"
 )
 
-type MapperInterface interface {
-	ParseField() error
-	GetTable() (table string)
-	GetPK() (pk string)
-	SetTable(table string)
-	SetTableAlias(alias string)
-	SetAliasMap(aliasMap *map[string]string)
-	GetColumn() (column []string)
-	GetAddress() (address []interface{})
-	GetAddressByColumn(column []string) (address []interface{})
-	GetColumnAndAddress() (column []string, address []interface{})
-	GetValuesByColumns(columns []string) ([]interface{})
-	GetColumnsAndValues() (columns []string, values []interface{})
-}
+const (
+	PARSE = iota
+	PARSE_SELECT
+	PARSE_INSERT
+	PARSE_UPDATE
+)
 
 type Mapper struct {
+	parseType      int
 	joinMap        *map[string]string
 	table          string
 	alias          string
@@ -94,7 +87,7 @@ func (m *Mapper) GetTable() string {
 	return m.table
 	//if m.table == "" {
 	//	// table还是为空,则进行名称解析
-	//	if m.table = CallTableMethod(m.v); m.table == "" {
+	//	if m.table = CallTableMethod(m.fv); m.table == "" {
 	//		fName := m.t.Name()
 	//		if fName == "" {
 	//			m.table = ""
@@ -178,8 +171,8 @@ func recursionGetColumnAndAddress(fs *[]*Field) ([]string, []interface{}, error)
 		return nil, nil, define.ObjectNoFieldError
 	}
 	for i := 0; i < fieldsSize; i++ {
-		if (*fs)[i].external != nil {
-			subColumn, subAddress, err := recursionGetColumnAndAddress((*fs)[i].external.fields)
+		if (*fs)[i].extend != nil {
+			subColumn, subAddress, err := recursionGetColumnAndAddress((*fs)[i].extend.fields)
 			if err == nil {
 				columns = append(columns, subColumn...)
 				addresses = append(addresses, subAddress...)
@@ -192,16 +185,16 @@ func recursionGetColumnAndAddress(fs *[]*Field) ([]string, []interface{}, error)
 	return columns, addresses, nil
 }
 
-func (m *Mapper) Parse() error {
+func (m *Mapper) Parse(parseType int) error {
 	var fv reflect.Value
 	if m.ptr {
 		fv = m.pv
 	} else {
 		fv = m.v
 	}
+	m.parseType = parseType
 	// 初始化table映射
 	m.parseTableMapper(m.v)
-
 	m.fields = m.parseFieldMapper(m.t, fv, m.alias)
 	return nil
 }
@@ -236,12 +229,14 @@ func (m *Mapper) parseFieldMapper(t reflect.Type, v reflect.Value, alias string)
 		ff = t.Field(i)
 		fv = v.Field(i)
 		// 解析Tag
-		if tag = NewTag(&ff, &fv).parse(m.styler.column); tag.ignore {
+		if tag = NewTag(&ff, &fv).parse(m.styler.column, m.syntax); tag.ignore {
 			continue
 		}
 		// 处理字段类型
 		if field, err := m.processField(ff, fv, tag, alias); err == nil {
 			fields = append(fields, field)
+		} else {
+			panic(err)
 		}
 	}
 	return
@@ -268,17 +263,33 @@ func (m *Mapper) processField(ff reflect.StructField, fv reflect.Value,
 // 处理指针字段类型
 func (m *Mapper) processPtrField(ff reflect.StructField, pfv reflect.Value,
 	tag *Tag, alias string) (*Field, error) {
-	// 如果是一个空指针
-	if !pfv.Elem().IsValid() {
-		// 如果该指针不能设置内存则跳过这个字段
-		if !pfv.CanSet() {
-			return nil, errors.New(
-				fmt.Sprintf("The %s field is a pointer type, but the address cannot be set, you can set ignore",
-					ff.Type.Elem().Kind().String()))
+	// 如果是一个空指针并且解析类型是select
+	// 那么就对这个空指针进行赋值
+	if pfv.IsNil(){
+		fmt.Println(tag)
+		if m.parseType == PARSE_SELECT {
+			if !pfv.CanSet() {
+				return nil, define.NullPointerAndNotAssign
+			}
+			// 对空指针设置内存
+			pfv.Set(reflect.New(ff.Type.Elem()))
 		}
-		// 对空指针设置内存
-		pfv.Set(reflect.New(ff.Type.Elem()))
+
+		// 插入类型为空类型
+		if m.parseType == PARSE_INSERT {
+			field := &Field{
+				tag:       tag,
+				addr:      nil,
+				typ:       "null",
+				tagString: tag.column,
+				fv:        nil,
+			}
+			m.tagFieldMapper[tag.column] = field
+			m.orderFName = append(m.orderFName, tag.column)
+			return field, nil
+		}
 	}
+
 	elem := pfv.Elem()
 	switch elem.Kind() {
 	case
@@ -302,6 +313,10 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 	if err != nil {
 		return nil, err
 	}
+	// 用户自定义字段
+	if _, ok := addr.(Custom); ok {
+		return m.structCustomTypeField(fv, addr, tag, alias), nil
+	}
 
 	// 特殊类型字段进行特殊处理
 	switch addr.(type) {
@@ -310,33 +325,17 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 	case Custom: // 用户自定义字段
 		return m.structCustomTypeField(fv, addr, tag, alias), nil
 	default:
-		// 如果是join的struct
-		// 定义了alias,则用这个alias覆盖上级的alias
-		// 否则会调用定义Table()进行解析
-		// 否则统一使用上级的alias
-		if tag.isExt && tag.useAlias {
-			if tag.externalAlias != "" {
-				alias = tag.externalAlias
-			} else {
-				table, alias = m.parseStructTableAndAlias(ff, fv, tag)
-			}
-
-			// 当table为空时,使用第一个struct初始化table
+		// 如果是连接查询的struct, 则对alias的值进行判定,
+		// 如果不是, 使用最上级的alias
+		if tag.extend {
+			table, alias = m.decideExtendFieldTableAndAlias(ff, fv, tag)
+			// 存在一种情况, 当一个struct中的所有field都是 extend类型时,
+			// 并且用户没有为这个struct定义Table, 也没有调用查询Table,
+			// 那么就无法得知, 因此需要将第一个extend设置为查询的table
 			if m.table == "" {
-				if table == "" {
-					if table = CallTableMethod(fv); table == "" {
-						table = m.styler.table(ff.Name)
-					}
-				}
-				m.table = table
-			}
-
-			// 当alias为空时,使用第一个struct初始化alias
-			if m.alias == "" && alias != "" {
-				m.alias = alias
+				m.table, m.alias = table, alias
 			}
 		}
-
 		// 如果是指针类型,还需要解指针引用
 		if ptr {
 			fv = fv.Elem()
@@ -346,7 +345,7 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 		sub := m.parseFieldMapper(fv.Type(), fv, alias)
 		return &Field{
 			tag: tag,
-			external: &ExternalField{
+			extend: &ExtendField{
 				alias:  alias,
 				fields: &sub,
 			},
@@ -362,7 +361,6 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 	//	addr = fv.Interface()
 	//	return m.structTimeTypeField(fv, addr, tag, alias), nil
 	//}
-
 	// Custom非之针字段 需要获取地址
 	//if !ptr {
 	//	if fv.CanAddr() {
@@ -386,7 +384,6 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 	//if _, ok := addr.(Custom); ok {
 	//	return m.structCustomTypeField(fv, addr, tag, alias), nil
 	//}
-
 	// var pt reflect.Type
 	//if ptr {
 	//	ft = ff.Type
@@ -425,22 +422,21 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 	//		addr:      iface,
 	//		typ:       "custom",
 	//		tagString: column,
-	//		v:         &fv,
+	//		fv:         &fv,
 	//	}
 	//	m.tagFieldMapper[column] = field
 	//	m.orderFName = append(m.orderFName, column)
 	//	return field, nil
 	//}
-
 	// 如果是join的struct
 	// 定义了alias,则用这个alias覆盖上级的alias
 	// 否则会调用定义Table()进行解析
 	// 否则统一使用上级的alias
-	//if tag.isExt && tag.useAlias {
-	//	if tag.externalAlias != "" {
-	//		alias = tag.externalAlias
+	//if tag.extend && tag.useAlias {
+	//	if tag.extendTable != "" {
+	//		alias = tag.extendTable
 	//	} else {
-	//		table, alias = m.parseStructTableAndAlias(ff, fv, tag)
+	//		table, alias = m.decideExtendFieldTableAndAlias(ff, fv, tag)
 	//	}
 	//
 	//	// 当table为空时,使用第一个struct初始化table
@@ -468,7 +464,7 @@ func (m *Mapper) structTypeField(ff reflect.StructField, fv reflect.Value,
 	//sub := m.parseFieldMapper(fv.Type(), fv, alias)
 	//return &Field{
 	//	tag: tag,
-	//	external: &ExternalField{
+	//	extend: &ExtendField{
 	//		alias:  alias,
 	//		fields: &sub,
 	//	},
@@ -484,7 +480,7 @@ func (m *Mapper) structCustomTypeField(fv reflect.Value,
 		addr:      addr,
 		typ:       "custom",
 		tagString: column,
-		v:         &fv,
+		fv:        &fv,
 	}
 	m.tagFieldMapper[column] = field
 	m.orderFName = append(m.orderFName, column)
@@ -500,46 +496,61 @@ func (m *Mapper) structTimeTypeField(fv reflect.Value,
 		addr:      addr,
 		typ:       "time",
 		tagString: column,
-		v:         &fv,
+		fv:        &fv,
 	}
 	m.tagFieldMapper[column] = field
 	m.orderFName = append(m.orderFName, column)
 	return field
 }
 
-// 解析连接的struct的table和alias
-func (m *Mapper) parseStructTableAndAlias(ff reflect.StructField, fv reflect.Value, tag *Tag) (table, alias string) {
-	// 调用用户定义的Table()方法
-	if table = CallTableMethod(fv); table == "" {
-		// 调用失败解析名称
-		table = m.styler.table(ff.Name)
-		alias = table
-		return
-	}
-	// 在Join map中查找对应的alias
-	// 如果查找到则直接返回
-	if m.joinMap != nil {
-		if v, ok := (*m.joinMap)[table]; ok {
-			alias = v
-			return
-		}
-	}
-	// 调用Table()方法后的返回值进行解析alias 类似 foo as bar
-	// 这样的格式可以解析出table为foo alias 为bar
-	if table, alias = m.syntax.ParseTable(table); alias == "" {
-		// 如果解析后alias为空
-		// 则在joinMap中查找, 查找到则返回
-		if m.joinMap != nil {
-			if v, ok := (*m.joinMap)[table]; ok {
-				alias = v
-				return
+// 决定扩展字段的别名
+func (m *Mapper) decideExtendFieldTableAndAlias(ff reflect.StructField, fv reflect.Value, tag *Tag) (string, string) {
+	var table, alias string
+	// 用户如果定义了extend相关属性,则使用定义的
+	// 否则调用用户定义的方法
+	// 如果方法没有定义则对字段名进行定义, 这时的alias = field name
+	if tag.extendTable != "" {
+		if tag.extendAlias != "" {
+			table, alias = tag.extendTable, tag.extendAlias
+		} else {
+			// 在join map中找到对应的alias
+			if m.joinMap != nil {
+				if v, ok := (*m.joinMap)[tag.extendTable]; ok {
+					alias = v
+				}
+			} else {
+				alias = tag.extendTable
 			}
 		}
-		// 没有查找到则alias == table
-		alias = table
-		return
+	} else {
+		if table = CallTableMethod(fv); table == "" {
+			// 没有为struct定义 Table方法
+			// 进行名称解析
+			table = m.styler.table(ff.Name)
+			// 在join map中找到对应的alias
+			if m.joinMap != nil {
+				if v, ok := (*m.joinMap)[table]; ok {
+					alias = v
+				}
+			} else {
+				alias = table
+			}
+		} else {
+			// 如果能从用户为 struct定义的Table中解析出alias, 则使用解析出的
+			// 否则查找join map, 如果找不到, alias = table
+			if table, alias = m.syntax.ParseTable(table); alias == "" {
+				// 在join map中找到对应的alias
+				if m.joinMap != nil {
+					if v, ok := (*m.joinMap)[table]; ok {
+						alias = v
+					}
+				} else {
+					alias = table
+				}
+			}
+		}
 	}
-	return
+	return table, alias
 }
 
 // 处理基本类型
@@ -555,7 +566,7 @@ func (m *Mapper) basicTypeField(f reflect.StructField, fv reflect.Value, tag *Ta
 		typ:       f.Type.String(),
 		tagString: column,
 		addr:      addr,
-		v:         &fv,
+		fv:        &fv,
 	}
 	m.tagFieldMapper[column] = field
 	m.orderFName = append(m.orderFName, column)
@@ -624,14 +635,14 @@ func (m *Mapper) AssignAddressValue() {
 
 func recursionAssignAddressValue(fields []*Field) {
 	for i, n := 0, len(fields); i < n; i++ {
-		if fields[i].external != nil {
-			recursionAssignAddressValue(*fields[i].external.fields)
+		if fields[i].extend != nil {
+			recursionAssignAddressValue(*fields[i].extend.fields)
 		}
 		fields[i].assignValue()
 	}
 }
 
-func (m *Mapper) GetColumnsAndValues() (columns []string, values []interface{}) {
+func (m *Mapper) GetInsertColumnAndValues() (columns []string, values []interface{}) {
 	for _, c := range m.orderFName {
 		if f, ok := m.tagFieldMapper[c]; ok {
 			values = append(values, f.getInsertValue())
@@ -639,6 +650,15 @@ func (m *Mapper) GetColumnsAndValues() (columns []string, values []interface{}) 
 		}
 	}
 	//columns, values = recursionGetColumnsAndValues(m.fields, true)
+	return
+}
+
+func (m *Mapper) GetInsertValues() (values []interface{}) {
+	for _, c := range m.orderFName {
+		if f, ok := m.tagFieldMapper[c]; ok {
+			values = append(values, f.getInsertValue())
+		}
+	}
 	return
 }
 
@@ -673,8 +693,8 @@ func recursionGetColumnsAndValues(fields []*Field, allowZero bool) (columns []st
 		return
 	}
 	for i := 0; i < fieldsSize; i++ {
-		if fields[i].external != nil {
-			subCols, subValues := recursionGetColumnsAndValues(*fields[i].external.fields, allowZero)
+		if fields[i].extend != nil {
+			subCols, subValues := recursionGetColumnsAndValues(*fields[i].extend.fields, allowZero)
 			columns = append(columns, subCols...)
 			values = append(values, subValues...)
 		} else {

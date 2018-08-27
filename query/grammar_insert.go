@@ -12,47 +12,117 @@ import (
 
 func (g *Grammar) CompileInsert(value interface{}, builder *Builder) (sqlStr string, bindings []interface{}, err error) {
 	var table, columns, parameters string
-	reflectV := reflect.ValueOf(value)
-	reflectT := reflectV.Type()
-	switch reflectT.Kind() {
-	case reflect.Map:
-		table, columns, parameters, bindings, err = g.processInsertMapType(false, value, builder)
-		if err != nil {
-			return
-		}
-	case reflect.Struct:
-		table, columns, parameters, bindings, err = g.processInsertObjectType(reflectV, builder)
-		if err != nil {
-			return
-		}
-	case reflect.Slice:
-		switch reflectT.Elem().Kind() {
-		case reflect.Struct:
-			table, columns, parameters, bindings, err = g.processInsertMultiObject(reflectV, builder)
-			if err != nil {
-				return
-			}
-		case reflect.Map:
-			table, columns, parameters, bindings, err = g.processInsertSliceMapType(false, value, builder)
-			if err != nil {
-				return
-			}
-		default:
-			err = define.UnsupportedTypeError
-			return
-		}
-	case reflect.Ptr:
-		// pointer dereference
-		return g.CompileInsert(reflectV.Elem().Interface(), builder)
-	default:
-		err = define.UnsupportedTypeError
+	//reflectV := reflect.ValueOf(value)
+	//reflectT := reflectV.Type()
+	//if reflectT.Kind() != reflect.Ptr {
+	//	err = define.InsertPointerTypeError
+	//	return
+	//}
+	//
+	//if reflectT.Elem().Kind() != reflect.Struct {
+	//	err = define.InsertPointerDeferenceTypeError
+	//	return
+	//}
+	table, columns, parameters, bindings, err = g.processInsertObjectType(value, builder)
+	if err != nil {
 		return
 	}
-	if columns == "" {
-		return
-	}
-	sqlStr = fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, columns, parameters)
+	sqlStr = g.buildInsertSql(table, columns, parameters)
 	return
+
+	//switch reflectT.Elem().Kind() {
+	//case reflect.Map:
+	//	table, columns, parameters, bindings, err = g.processInsertMapType(false, value, builder)
+	//	if err != nil {
+	//		return
+	//	}
+	//case reflect.Struct:
+	//	table, columns, parameters, bindings, err = g.processInsertObjectType(value, builder)
+	//	if err != nil {
+	//		return
+	//	}
+	//case reflect.Slice:
+	//	switch reflectT.Elem().Kind() {
+	//	case reflect.Struct:
+	//		table, columns, parameters, bindings, err = g.processInsertMultiObject(reflectV, builder)
+	//		if err != nil {
+	//			return
+	//		}
+	//	case reflect.Map:
+	//		table, columns, parameters, bindings, err = g.processInsertSliceMapType(false, value, builder)
+	//		if err != nil {
+	//			return
+	//		}
+	//	default:
+	//		err = define.UnsupportedTypeError
+	//		return
+	//	}
+	//case reflect.Ptr:
+	//	// pointer dereference
+	//	return g.CompileInsert(reflectV.Elem().Interface(), builder)
+	//default:
+	//	err = define.UnsupportedTypeError
+	//	return
+	//}
+	//if columns == "" {
+	//	return
+	//}
+	//sqlStr = fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, columns, parameters)
+	//return
+}
+
+func (g *Grammar) CompileInsertMulti(builder *Builder, objects ...interface{}) (
+	sqlStr string, bindings []interface{}, err error) {
+	var (
+		values                   []interface{}
+		parameters               []string
+		table, column, parameter string
+	)
+	if len(objects) <= 0 {
+		err = define.MultiInsertNoObjectError
+		return
+	}
+
+	table, column, parameter, values, err = g.processInsertObjectType(objects[0], builder)
+	if err != nil {
+		return
+	}
+
+	parameters = append(parameters, parameter)
+	bindings = append(bindings, values...)
+	for i := 1; i < len(objects); i++ {
+		parameter, values, err = g.getInsertObjectParameterAndBindings(objects[i])
+		if err != nil {
+			return
+		}
+		parameters = append(parameters, parameter)
+		bindings = append(bindings, values...)
+	}
+	sqlStr = g.buildMultiInsertSql(table, column, parameters)
+	return
+}
+
+// 生成一个插入语句的sql
+func (g *Grammar) buildInsertSql(table, column, parameters string) string {
+	if column == "" {
+		return ""
+	}
+	return fmt.Sprintf("insert into %s (%s) values %s;", table, column, parameters)
+}
+
+// 生成多个插入语句的sql
+func (g *Grammar) buildMultiInsertSql(table, column string, parameters []string) string {
+	if column == "" {
+		return ""
+	}
+	var buf bytes.Buffer
+	for i := 0; i < len(parameters); i++ {
+		buf.WriteString(parameters[i])
+		if i != len(parameters) - 1 {
+			buf.WriteString(",")
+		}
+	}
+	return fmt.Sprintf("insert into %s (%s) values %s;", table, column, buf.String())
 }
 
 // 处理插入 map类型
@@ -154,24 +224,18 @@ func (g *Grammar) processInsertMap(values ...map[string]interface{}) (
 }
 
 // 处理插入一个struct
-func (g *Grammar) processInsertObjectType(refV reflect.Value, builder *Builder) (
+func (g *Grammar) processInsertObjectType(obj interface{}, builder *Builder) (
 	table, columnStr, parameterStr string, bindings []interface{}, err error) {
-
-	v := refV.Interface()
-	// if the value insert is empty, we will not do anything
-	//if reflect.DeepEqual(v, reflect.Zero(refV.Type()).Interface()) {
-	//	return
-	//}
 	var (
 		column    []string
 		values    []interface{}
 		objMapper *mapper.Mapper
 	)
-	if objMapper, err = mapper.NewMapper(v, g.syntax, g.styler); err != nil {
+	if objMapper, err = mapper.NewMapper(obj, g.syntax, g.styler); err != nil {
 		return
 	}
 
-	if err = objMapper.Parse(); err != nil {
+	if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
 		return
 	}
 
@@ -179,13 +243,30 @@ func (g *Grammar) processInsertObjectType(refV reflect.Value, builder *Builder) 
 		builder.tableName = objMapper.GetTable()
 	}
 
-	if column, values = objMapper.GetColumnsAndValues(); len(column) <= 0 {
+	if column, values = objMapper.GetInsertColumnAndValues(); len(column) <= 0 {
 		return
 	}
 	table = g.syntax.WrapTable(builder.tableName)
 	columnStr = g.syntax.ColumnToString(column)
 	parameterStr = "(" + g.syntax.ParameterByLenToString(len(values)) + ")"
-	bindings = append(bindings, values...)
+	bindings = values
+	return
+}
+
+func (g *Grammar) getInsertObjectParameterAndBindings(object interface{}) (
+	parameter string, bindings []interface{}, err error) {
+
+	var objMapper *mapper.Mapper
+	if objMapper, err = mapper.NewMapper(object, g.syntax, g.styler); err != nil {
+		return
+	}
+
+	if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
+		return
+	}
+
+	bindings = objMapper.GetInsertValues()
+	parameter = "(" + g.syntax.ParameterByLenToString(len(bindings)) + ")"
 	return
 }
 
@@ -218,7 +299,7 @@ func (g *Grammar) processInsertMultiObject(refV reflect.Value, builder *Builder)
 			continue
 		}
 
-		if err = objMapper.Parse(); err != nil {
+		if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
 			continue
 		}
 
@@ -226,7 +307,7 @@ func (g *Grammar) processInsertMultiObject(refV reflect.Value, builder *Builder)
 			builder.tableName = objMapper.GetTable()
 		}
 
-		if column, values = objMapper.GetColumnsAndValues(); len(column) <= 0 {
+		if column, values = objMapper.GetInsertColumnAndValues(); len(column) <= 0 {
 			continue
 		}
 
@@ -247,7 +328,7 @@ func (g *Grammar) processInsertMultiObject(refV reflect.Value, builder *Builder)
 			continue
 		}
 
-		if err = objMapper.Parse(); err != nil {
+		if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
 			continue
 		}
 

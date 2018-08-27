@@ -100,7 +100,7 @@ func (g *Grammar) processUpdateObjectType(value interface{}, builder *Builder) (
 	}
 
 	objMapper.SetJoinMap(&builder.joinMap)
-	if err = objMapper.Parse(); err != nil {
+	if err = objMapper.Parse(mapper.PARSE_UPDATE); err != nil {
 		return
 	}
 

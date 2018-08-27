@@ -3,13 +3,13 @@ package main
 import (
 	"github.com/Soul-Mate/sprydb"
 	_ "github.com/go-sql-driver/mysql"
-		"fmt"
+	"fmt"
 	"os"
 )
 
-func main()  {
+func main() {
 	var (
-		err error
+		err  error
 		conn *sprydb.Connection
 	)
 	manager := sprydb.NewManager()

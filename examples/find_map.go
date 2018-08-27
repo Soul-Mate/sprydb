@@ -10,9 +10,9 @@ import (
 func main() {
 	var (
 		err  error
-		conn *tinysql.Connection
+		conn *sprydb.Connection
 	)
-	manager := tinysql.NewManager()
+	manager := sprydb.NewManager()
 	manager.AddConnection("default", map[string]string{
 		"username": "root",
 		"password": "root",
@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(result)
-	result, err = conn.Table("posts").
+	result, err = conn.Table("user_posts").
 		FindReturnMap(1, "id")
 	if err != nil {
 		log.Fatal(err)

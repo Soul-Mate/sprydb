@@ -18,13 +18,13 @@ func main() {
 		conn *sprydb.Connection
 	)
 
-	const SQL_PATH = "D:/code/go/src/github.com/Soul-Mate/sprydb/examples/example.sql"
+	const SQL_PATH = "/Users/xyc/Code/go/src/github.com/Soul-Mate/sprydb/examples/example.sql"
 	manager := sprydb.NewManager()
 	manager.AddConnection("default", map[string]string{
 		"username": "root",
 		"password": "root",
 		"host":     "127.0.0.1",
-		"port":     "3306",
+		"port":     "33060",
 		"dbname":   "test",
 		"driver":   "mysql",
 	})
@@ -74,13 +74,13 @@ func insert(n int, conn *sprydb.Connection) {
 
 			session, err := conn.BeginTransaction(0)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "transaction error: %v", err)
+				fmt.Fprintf(os.Stderr, "transaction error: %v\n", err)
 				return
 			}
 
 			defer func() {
 				if err = session.Close(); err != nil {
-					fmt.Fprintf(os.Stderr, "session close error: %v", err)
+					fmt.Fprintf(os.Stderr, "session close error: %v\n", err)
 				}
 			}()
 

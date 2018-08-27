@@ -5,40 +5,48 @@ import (
 	"github.com/Soul-Mate/sprydb"
 	_ "github.com/go-sql-driver/mysql"
 	"fmt"
+	"time"
+	"github.com/Soul-Mate/sprydb/query"
 )
 
-type User struct {
-	Id   int    `spry:"column:id"`
-	Name string `spry:"column:name"`
-	Show string `spry:"show"`
+type Users struct {
+	Id        int             `spry:"col:id"`
+	Name      string          `spry:"col:name"`
+	CreatedAt time.Time       `spry:"col:created_at;;"`
+	Profile   UserProfileImpl `spry:"col:profile"`
+	//Posts     *UserPosts      `spry:"extend:user_posts"`
 }
 
-func (u *User) Table() string {
-	return "users"
+type UserProfileImpl struct {
+	profile string
 }
 
-type PostContent struct {
-	data string
-	len  int
+func (p *UserProfileImpl) ReadFromDB(data []byte) {
+	p.profile = string(data)
 }
 
-type Posts struct {
-	Id          int          `spry:"column:id"`
-	UserId      int          `spry:"column:user_id"`
-	PostContent *PostContent `spry:"column:content"`
-}
-
-func (p *Posts) Table() string {
-	return "posts"
-}
-
-func (p *PostContent) Read(data []byte) {
-	p.len = len(data)
-	p.data = string(data)
-}
-
-func (p *PostContent) Write() []byte {
+func (p *UserProfileImpl) WriteToDB() []byte {
 	return nil
+}
+
+type UserPosts struct {
+	Id     int      `spry:"col:id"`
+	UserId int      `spry:"col:user_id"`
+	Post   PostImpl `spry:"col:post"`
+}
+
+type PostImpl struct {
+	data string
+	l    int
+}
+
+func (p *PostImpl) ReadFromDB(data []byte) {
+	p.data = string(data)
+	p.l = len(p.data)
+}
+
+func (p *PostImpl) WriteToDB() []byte {
+	return []byte(p.data)
 }
 
 func main() {
@@ -59,25 +67,28 @@ func main() {
 	if conn, err = manager.Connection("default"); err != nil {
 		log.Fatal(err)
 	}
-	conn.EnableQueryLog()
-	result, err := conn.Table("users as a").
-		Select("a.id", "b.id as post_id").
-		Join("posts as b", "b.id", "=", "a.id").FirstReturnMap()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(result)
-	userPost := struct {
-		Posts `spry:"external:b"`
-		User  `spry:"external:a"`
+	users := &struct {
+		Users     `spry:"extend"`
+		UserPosts `spry:"extend"`
 	}{}
-	err = conn.
-		Join("users as a", "a.id", "=", "b.user_id").
-		First(&userPost)
-
+	err = conn.Table("users as a").
+		Join("user_posts as b", "a.id", "=", "b.user_id").
+		First(users)
 	if err != nil {
 		log.Fatal(err)
 	}
+	//fmt.Println(users)
 
-	fmt.Println(userPost)
+	var usersS []struct {
+		Users     `spry:"extend"`
+		UserPosts `spry:"extend"`
+	}
+	err = conn.Table("users as a").
+		JoinClosure("user_posts as b", func(join *query.BuilderJoin) {
+			join.On("a.id", "=", "b.user_id").Where("a.id", "=", 1)
+		}).Get(&usersS)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(usersS)
 }

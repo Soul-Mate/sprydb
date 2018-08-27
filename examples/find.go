@@ -23,14 +23,8 @@ func (p *UserProfileImpl) WriteToDB() []byte {
 type Users struct {
 	Id    int
 	Name  string `spry:"col:name"`
-	Other struct {
-		Other struct{
-			Other struct{
-				CreatedAt time.Time       `spry:"col:created_at;use_alias:false;"`
-				Profile   UserProfileImpl `spry:"col:profile"`
-			}
-		}
-	}
+	CreatedAt time.Time       `spry:"col:created_at;use_alias:false;"`
+	Profile   *UserProfileImpl `spry:"col:profile"`
 }
 
 func main() {
@@ -44,7 +38,7 @@ func main() {
 		"username": "root",
 		"password": "root",
 		"host":     "127.0.0.1",
-		"port":     "3306",
+		"port":     "33060",
 		"dbname":   "test",
 		"driver":   "mysql",
 	})

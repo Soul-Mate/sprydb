@@ -237,8 +237,8 @@ func parseFieldExternalField() error {
 			SubSub      *struct {
 				Id   int `spry:"column:id"`
 				Name int `spry:"column:name"`
-			} `spry:"external:sub_sub"`
-		} `spry:"external"`
+			} `spry:"extend:sub_sub"`
+		} `spry:"extend"`
 	}{}
 	parseError := errors.New("parseFieldExternalField: parse error")
 	if objMapper, err = NewMapper(&obj, syntax2, nil); err != nil {
@@ -287,8 +287,8 @@ func parseCustomField() error {
 			SubSub      *struct {
 				Id   int `spry:"column:id"`
 				Name int `spry:"column:name"`
-			} `spry:"external:sub_sub"`
-		} `spry:"external"`
+			} `spry:"extend:sub_sub"`
+		} `spry:"extend"`
 		CustomText
 	}{}
 	parseError := errors.New("parseCustomField: parse error")
@@ -390,8 +390,8 @@ func TestMapper_GetColumn(t *testing.T) {
 			SubSub      *struct {
 				Id   int `spry:"column:sub_sub_id"`
 				Name int `spry:"column:name"`
-			} `spry:"external:sub_sub"`
-		} `spry:"external:sub"`
+			} `spry:"extend:sub_sub"`
+		} `spry:"extend:sub"`
 		CustomText
 	}{}
 	if objMapper, err = NewMapper(&obj, syntax2, nil); err != nil {

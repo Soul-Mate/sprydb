@@ -358,6 +358,11 @@ func (c *Connection) Insert(value interface{}) (lastInsertId, rowsAffected int64
 	return session.Insert(value)
 }
 
+func (c *Connection) InsertMulti(objects ...interface{}) (lastInsertId, rowsAffected int64, err error) {
+	session := NewSession(c)
+	return session.InsertMulti(objects...)
+}
+
 func (c *Connection) Update(value interface{}) (rowsAffected int64, err error) {
 	session := NewSession(c)
 	return session.Update(value)

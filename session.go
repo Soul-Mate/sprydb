@@ -34,8 +34,8 @@ func NewSession(connection *Connection) *Session {
 	session := new(Session)
 	session.ctx = context.Background()
 	session.syntax = syntax.NewSyntax(connection.driver)
-	session.grammar = query.NewGrammarFactory(connection.driver, session.syntax, session.binding, connection.style)
 	session.binding = binding.NewBinding()
+	session.grammar = query.NewGrammarFactory(connection.driver, session.syntax, session.binding, connection.style)
 	session.stmtCache = make(map[uint32]*sql.Stmt)
 	session.connection = connection
 	session.queryBuilder = query.NewBuilder(connection.driver, session.syntax, session.binding)
@@ -266,7 +266,7 @@ func (s *Session) Find(id int, object interface{}, column ...string) error {
 	}
 
 	// 解析映射对象
-	if err = objMapper.Parse(); err != nil {
+	if err = objMapper.Parse(mapper.PARSE_SELECT); err != nil {
 		return err
 	}
 
@@ -433,7 +433,7 @@ func (s *Session) First(object interface{}, column ...string) error {
 
 	joinMap := s.queryBuilder.GetJoinMap()
 	objMapper.SetJoinMap(&joinMap)
-	if err = objMapper.Parse(); err != nil {
+	if err = objMapper.Parse(mapper.PARSE_SELECT); err != nil {
 		return err
 	}
 
@@ -580,7 +580,7 @@ func (s *Session) Get(objects interface{}, column ...string) error {
 
 	joinMap := s.queryBuilder.GetJoinMap()
 	objMapper.SetJoinMap(&joinMap)
-	if err = objMapper.Parse(); err != nil {
+	if err = objMapper.Parse(mapper.PARSE_SELECT); err != nil {
 		return err
 	}
 
@@ -690,7 +690,7 @@ func (s *Session) prepareGiveColumnMapper(m *mapper.Mapper, column ...string) []
 	}
 }
 
-func (s *Session) Insert(value interface{}) (lastInsertId, rowsAffected int64, err error) {
+func (s *Session) Insert(object interface{}) (lastInsertId, rowsAffected int64, err error) {
 	var (
 		stmt     *sql.Stmt
 		sqlStr   string
@@ -700,9 +700,47 @@ func (s *Session) Insert(value interface{}) (lastInsertId, rowsAffected int64, e
 
 	defer s.resetBuilder()
 
-	if sqlStr, bindings, err = s.grammar.CompileInsert(value, s.queryBuilder); err != nil {
+	if sqlStr, bindings, err = s.grammar.CompileInsert(object, s.queryBuilder); err != nil {
 		return
 	}
+
+	if sqlStr == "" {
+		return
+	}
+
+	if stmt, err = s.prepare(sqlStr); err != nil {
+		return
+	}
+
+	if result, err = s.exec(stmt, bindings...); err != nil {
+		return
+	}
+
+	if lastInsertId, err = result.LastInsertId(); err != nil {
+		return
+	}
+
+	if rowsAffected, err = result.RowsAffected(); err != nil {
+		return
+	}
+	return
+}
+
+func (s *Session) InsertMulti(objects ...interface{}) (lastInsertId, rowsAffected int64, err error) {
+	var (
+		stmt     *sql.Stmt
+		sqlStr   string
+		result   sql.Result
+		bindings []interface{}
+	)
+
+	defer s.resetBuilder()
+
+	if sqlStr, bindings, err = s.grammar.CompileInsertMulti(s.queryBuilder, objects...); err != nil {
+		return
+	}
+
+	println(sqlStr)
 
 	if sqlStr == "" {
 		return

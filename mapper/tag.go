@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 	"strconv"
+	"github.com/Soul-Mate/sprydb/syntax"
 )
 
 const (
@@ -17,14 +18,15 @@ const (
 )
 
 type Tag struct {
-	ignore        bool
-	isExt         bool
-	column        string
-	useAlias      bool
-	updateZero    bool
-	externalAlias string
-	fv            *reflect.Value
-	f             *reflect.StructField
+	ignore      bool
+	extend      bool
+	column      string
+	useAlias    bool
+	updateZero  bool
+	extendTable string
+	extendAlias string
+	fv          *reflect.Value
+	f           *reflect.StructField
 }
 
 func NewTag(field *reflect.StructField, fieldValue *reflect.Value) *Tag {
@@ -35,7 +37,7 @@ func NewTag(field *reflect.StructField, fieldValue *reflect.Value) *Tag {
 	return tag
 }
 
-func (t *Tag) parse(fieldParser func(string) string) *Tag {
+func (t *Tag) parse(fieldParser func(string) string, st syntax.Syntax) *Tag {
 	// 字段必须是可导出的
 	if !t.fv.CanInterface() {
 		t.ignore = true
@@ -49,7 +51,7 @@ func (t *Tag) parse(fieldParser func(string) string) *Tag {
 	}
 
 	var tagAttributeVal, tagAttributeKey string
-	// 解析以;号分割的多个tag属性 column external 等
+	// 解析以;号分割的多个tag属性 column extend 等
 	tagGroup := strings.Split(tag, ";")
 	for _, group := range tagGroup {
 		// 解析每个属性的值
@@ -77,8 +79,8 @@ func (t *Tag) parse(fieldParser func(string) string) *Tag {
 				t.updateZero = v
 			}
 		case extendTag:
-			t.isExt = true
-			t.externalAlias = tagAttributeVal
+			t.extend = true
+			t.extendTable, t.extendAlias = st.ParseTable(tagAttributeVal)
 		}
 	}
 
