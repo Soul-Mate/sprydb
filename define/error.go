@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	InserSliceTypeError             = errors.New("when using slice insert, the element must be a struct")
 	InsertPointerTypeError          = errors.New("the insert object must be a pointer type")
 	InsertPointerDeferenceTypeError = errors.New("the pointer must be a structure after dereference")
 	MultiInsertNoObjectError        = errors.New("no objects to insert")

@@ -45,9 +45,11 @@ func NewMapper(object interface{}, syntax syntax.Syntax, style MapperStyler) (*M
 		mapper.opv = reflectValue.Elem()
 		mapper.ot = mapper.opv.Type()
 	case reflect.Struct:
+		println("aaa")
 		mapper.ov = reflectValue
 		mapper.ot = reflectValue.Type()
 	default:
+		println("bbb")
 		return nil, define.UnsupportedTypeError
 	}
 	// 解析语法

@@ -46,23 +46,27 @@ func main() {
 	if conn, err = manager.Connection("default"); err != nil {
 		log.Fatal(err)
 	}
-	user := Users{
-	}
-	id, record, err := conn.Insert(user)
+	//user := Users{
+	//}
+	//id, record, err := conn.Insert(user)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//fmt.Printf("inser %d record, id: %d\n", id, record)
+
+	id, record, err := conn.Insert([]Users{
+		{
+			Name: "Object1",
+		},
+		{
+			Name: "Object2",
+		},
+		{
+			Name: "Object3",
+		},
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("inser %d record, id: %d\n", id, record)
-	//id, record, err = conn.Insert([]Users{
-	//	{
-	//		Name: "Object1",
-	//	},
-	//	{
-	//		Name: "Object2",
-	//	},
-	//	{
-	//		Name: "Object3",
-	//	},
-	//})
-	//fmt.Printf("inser %d record, id: %d\n", id, record)
 }
