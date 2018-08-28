@@ -136,6 +136,8 @@ func (f *Field) getUpdateValue() interface{} {
 		} else {
 			return data
 		}
+	case "null":
+		return
 	default:
 		if !f.tag.updateZero && f.isZero() {
 			return nil
@@ -152,11 +154,12 @@ func (f *Field) getInsertValue() interface{} {
 		if f.isZero() {
 			return nil
 		}
-		if tm, ok := (*f).addr.(Time); ok {
-			return tm.Format(tm.layout)
+		var layout = "2006-01-02 15:04:05"
+		if tm, ok := (*f).addr.(time.Time); ok {
+			return tm.Format(layout)
 		}
-		if tm, ok := (*f).addr.(*Time); ok {
-			return tm.Format(tm.layout)
+		if tm, ok := (*f).addr.(*time.Time); ok {
+			return tm.Format(layout)
 		}
 		return nil
 	case "custom":

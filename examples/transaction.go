@@ -24,7 +24,7 @@ func main()  {
 	if conn, err = manager.Connection("default"); err != nil {
 		log.Fatal(err)
 	}
-	session, err := conn.BeginTransaction(0)
+	session, err := conn.BeginTransaction()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -2,30 +2,27 @@ package define
 
 import (
 	"errors"
-	"fmt"
 )
 
 var (
-	InserSliceTypeError             = errors.New("when using slice insert, the element must be a struct")
-	InsertPointerTypeError          = errors.New("the insert object must be a pointer type")
-	InsertPointerDeferenceTypeError = errors.New("the pointer must be a structure after dereference")
-	MultiInsertNoObjectError        = errors.New("no objects to insert")
-	NullPointerAndNotAssign         = errors.New("this field is a null pointer and cannot be assigned")
-	FieldSliceTypeError             = errors.New("the slice type field only support uint8")
+	TableNoneError                 = errors.New("missing table Name")
+	InsertSliceTypeError           = errors.New("when using slice insert, the element must be a struct")
+	InsertStructEmptyError         = errors.New("insert struct cannot be empty")
+	PointerMapTypeError            = errors.New("the map type like *map[string]interface{}")
+	MapTypeError                   = errors.New("the map type like map[string]interface{}")
+	InsertMapEmptyError            = errors.New("insert map cannot be empty")
+	InsertPointerSliceMapTypeError = errors.New("the map type like *[]map[string]interface{}")
+	InsertSliceMapTypeError        = errors.New("the map type like []map[string]interface{}")
+	InsertSliceMapEmptyError       = errors.New("insert slice map cannot be empty")
+	NullPointerAndNotAssign        = errors.New("this field is a null pointer and cannot be assigned")
+	FieldSliceTypeError            = errors.New("the slice type field only support uint8")
+	UnsupportedInsertTypeError     = errors.New("unsupported insert type object")
+	TransactionAlreadyUseErr = errors.New("The transaction already use, please commit or rollabck.")
 )
 
 var (
 	ObjectNoneError          = errors.New("The object is nil")
-	TableNoneError           = errors.New("Missing table Name")
 	ObjectNoFieldError       = errors.New("The struct has not field")
 	UnsupportedTypeError     = errors.New("Unsupported type")
 	InvalidOperatorError     = errors.New("Invalid where operator.")
-	UnsupportedTypeErrorFunc = func(typ string) error {
-		errMsg := fmt.Sprintf("Unsupported type: %s.", typ)
-		return errors.New(errMsg)
-	}
-	UnsupportedScanTypeErrorFunc = func(typ string) error {
-		errMsg := fmt.Sprintf("Unsupported Scan type: %s.", typ)
-		return errors.New(errMsg)
-	}
 )

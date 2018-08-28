@@ -48,6 +48,7 @@ func (g *Grammar) processUpdateMapType(pointer bool, value interface{}, builder 
 		ok bool
 		v  map[string]interface{}
 	)
+
 	if builder.tableName == "" {
 		err = define.TableNoneError
 		return
@@ -59,7 +60,7 @@ func (g *Grammar) processUpdateMapType(pointer bool, value interface{}, builder 
 			ok = true
 		}
 		if !ok {
-			err = errors.New("The map type like *map[string]interface{}")
+			err = define.PointerMapTypeError
 			return
 		}
 		v = *value.(*map[string]interface{})
@@ -94,6 +95,7 @@ func (g *Grammar) processUpdateObjectType(value interface{}, builder *Builder) (
 	if objMapper, err = mapper.NewMapper(value, g.syntax, g.styler); err != nil {
 		return
 	}
+
 	if builder.tableName != "" {
 		objMapper.SetTable(builder.tableName)
 		objMapper.SetAlias(builder.tableAlias)

@@ -45,11 +45,9 @@ func NewMapper(object interface{}, syntax syntax.Syntax, style MapperStyler) (*M
 		mapper.opv = reflectValue.Elem()
 		mapper.ot = mapper.opv.Type()
 	case reflect.Struct:
-		println("aaa")
 		mapper.ov = reflectValue
 		mapper.ot = reflectValue.Type()
 	default:
-		println("bbb")
 		return nil, define.UnsupportedTypeError
 	}
 	// 解析语法
@@ -594,28 +592,6 @@ func (m *Mapper) GetInsertColumnAndValues() (columns []string, values []interfac
 		if f, ok := m.fm.get(c); ok {
 			values = append(values, f.getInsertValue())
 			columns = append(columns, c)
-		}
-	}
-	return
-}
-
-func (m *Mapper) GetInsertValues() (values []interface{}) {
-	for _, c := range m.fm.k {
-		if f, ok := m.fm.get(c); ok {
-			values = append(values, f.getInsertValue())
-		}
-	}
-	return
-}
-
-func (m *Mapper) GetValuesByColumns(columns []string) (values []interface{}) {
-	if len(m.fields) <= 0 {
-		return
-	}
-
-	for _, c := range columns {
-		if f, ok := m.fm.get(c); ok {
-			values = append(values, f.getInsertValue())
 		}
 	}
 	return

@@ -10,12 +10,7 @@ import (
 	"github.com/Soul-Mate/sprydb/query"
 	"github.com/Soul-Mate/sprydb/syntax"
 	"reflect"
-	"time"
-	"hash/crc32"
-)
-
-var (
-	TransactionAlreadyUseErr = errors.New("The transaction already use, please commit or rollabck.")
+		"hash/crc32"
 )
 
 type Session struct {
@@ -44,19 +39,18 @@ func NewSession(connection *Connection) *Session {
 
 func (s *Session) Close() error {
 	var err error
-	// clean stmt cache
 	for _, cache := range s.stmtCache {
 		err = cache.Close()
 	}
 	return err
 }
 
-func (s *Session) BeginTransaction(timeout time.Duration) (err error) {
+func (s *Session) BeginTransaction() (err error) {
 	if s.transaction != nil {
-		return TransactionAlreadyUseErr
+		return define.TransactionAlreadyUseErr
 	}
 
-	s.transaction = newTransaction(s.connection.DB, timeout)
+	s.transaction = newTransaction(s.connection.DB)
 	return s.transaction.begin()
 }
 
@@ -726,44 +720,6 @@ func (s *Session) Insert(object interface{}) (lastInsertId, rowsAffected int64, 
 	return
 }
 
-func (s *Session) InsertMulti(objects ...interface{}) (lastInsertId, rowsAffected int64, err error) {
-	var (
-		stmt     *sql.Stmt
-		sqlStr   string
-		result   sql.Result
-		bindings []interface{}
-	)
-
-	defer s.resetBuilder()
-
-	if sqlStr, bindings, err = s.grammar.CompileInsertMulti(s.queryBuilder, objects...); err != nil {
-		return
-	}
-
-	println(sqlStr)
-
-	if sqlStr == "" {
-		return
-	}
-
-	if stmt, err = s.prepare(sqlStr); err != nil {
-		return
-	}
-
-	if result, err = s.exec(stmt, bindings...); err != nil {
-		return
-	}
-
-	if lastInsertId, err = result.LastInsertId(); err != nil {
-		return
-	}
-
-	if rowsAffected, err = result.RowsAffected(); err != nil {
-		return
-	}
-	return
-}
-
 func (s *Session) Update(value interface{}) (rowsAffected int64, err error) {
 	var (
 		stmt     *sql.Stmt
@@ -846,12 +802,12 @@ func (s *Session) prepare(query string) (*sql.Stmt, error) {
 	if stmt, err := s.connection.connectionStmtCache(query); err == nil {
 		return stmt, nil
 	}
-	// cal check sum
+
 	c32 := crc32.ChecksumIEEE([]byte(query))
-	// load stmt stmtCache
 	if stmtCache, ok := s.stmtCache[c32]; ok {
 		return stmtCache, nil
 	}
+
 	if newStmt, err := s.connection.DB.PrepareContext(s.ctx, query); err != nil {
 		return nil, err
 	} else {

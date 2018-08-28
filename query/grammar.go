@@ -19,7 +19,6 @@ type GrammarInterface interface {
 	CompileWhere(wheres []map[string]interface{}, removeLeading bool) string
 	CompileOrderBy(orders map[string]interface{}) string
 	CompileInsert(object interface{}, builder *Builder) (sqlStr string, bindings []interface{}, err error)
-	CompileInsertMulti(builder *Builder, objects ...interface{}) (sqlStr string, bindings []interface{}, err error)
 	CompileUpdate(value interface{}, builder *Builder) (string, []interface{}, error)
 	CompileDelete(builder *Builder) (sqlStr string, err error)
 }

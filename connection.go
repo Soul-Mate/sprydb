@@ -164,9 +164,9 @@ func (c *Connection) connectionStmtCache(query string) (*sql.Stmt, error) {
 }
 
 // 开启事务
-func (c *Connection) BeginTransaction(timeout time.Duration) (*Session, error) {
+func (c *Connection) BeginTransaction() (*Session, error) {
 	session := NewSession(c)
-	err := session.BeginTransaction(timeout)
+	err := session.BeginTransaction()
 	return session, err
 }
 
@@ -356,11 +356,6 @@ func (c *Connection) First(object interface{}, column ...string) error {
 func (c *Connection) Insert(value interface{}) (lastInsertId, rowsAffected int64, err error) {
 	session := NewSession(c)
 	return session.Insert(value)
-}
-
-func (c *Connection) InsertMulti(objects ...interface{}) (lastInsertId, rowsAffected int64, err error) {
-	session := NewSession(c)
-	return session.InsertMulti(objects...)
 }
 
 func (c *Connection) Update(value interface{}) (rowsAffected int64, err error) {

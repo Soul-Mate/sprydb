@@ -2,117 +2,218 @@ package query
 
 import (
 	"fmt"
-	"sort"
 	"bytes"
-	"errors"
 	"reflect"
+	"sort"
 	"github.com/Soul-Mate/sprydb/define"
 	"github.com/Soul-Mate/sprydb/mapper"
 )
 
-func (g *Grammar) CompileInsert(value interface{}, builder *Builder) (sqlStr string, bindings []interface{}, err error) {
-	var table, columns, parameters string
+func (g *Grammar) CompileInsert(value interface{}, builder *Builder) (string, []interface{}, error) {
 	rv := reflect.ValueOf(value)
 	rt := rv.Type()
 	switch rt.Kind() {
+	case reflect.Ptr:
+		return g.CompileInsert(rv.Elem().Interface(), builder)
 	case reflect.Struct:
-		table, columns, parameters, bindings, err = g.processInsertObjectType(value, builder)
+		if rt.NumField() <= 0 {
+			return "", nil, define.InsertStructEmptyError
+		}
+		table, column, parameter, bindings, err := g.processInsertObject(value, builder)
 		if err != nil {
-			return
+			return "", nil, err
 		}
+		sqlStr := g.buildInsertSql(table, column, parameter)
+		return sqlStr, bindings, nil
 	case reflect.Slice:
-		if rt.Elem().Kind() != reflect.Struct {
-			err = define.InserSliceTypeError
-			return
+		switch rt.Elem().Kind() {
+		case reflect.Map:
+			return g.processInsertMultiMap(false, value, builder)
+		case reflect.Struct:
+			table, column, parameters, bindings, err := g.processInsertMultiObject(rv, builder)
+			if err != nil {
+				return "", nil, err
+			}
+			sqlStr := g.buildMultiInsertSql(table, column, parameters)
+			return sqlStr, bindings, nil
+		default:
+			return "", nil, define.InsertSliceTypeError
 		}
-		g.processInsertMultiObject(rv, builder)
-
+	case reflect.Map:
+		return g.processInsertMap(false, value, builder)
+	default:
+		return "", nil, define.UnsupportedInsertTypeError
 	}
-	if rt.Kind() != reflect.Ptr {
-		err = define.InsertPointerTypeError
-		return
-	}
-
-	if rt.Elem().Kind() != reflect.Struct {
-		err = define.InsertPointerDeferenceTypeError
-		return
-	}
-	table, columns, parameters, bindings, err = g.processInsertObjectType(value, builder)
-	if err != nil {
-		return
-	}
-	sqlStr = g.buildInsertSql(table, columns, parameters)
-	return
-
-	//switch rt.Elem().Kind() {
-	//case reflect.Map:
-	//	table, columns, parameters, bindings, err = g.processInsertMapType(false, value, builder)
-	//	if err != nil {
-	//		return
-	//	}
-	//case reflect.Struct:
-	//	table, columns, parameters, bindings, err = g.processInsertObjectType(value, builder)
-	//	if err != nil {
-	//		return
-	//	}
-	//case reflect.Slice:
-	//	switch rt.Elem().Kind() {
-	//	case reflect.Struct:
-	//		table, columns, parameters, bindings, err = g.processInsertMultiObject(rv, builder)
-	//		if err != nil {
-	//			return
-	//		}
-	//	case reflect.Map:
-	//		table, columns, parameters, bindings, err = g.processInsertSliceMapType(false, value, builder)
-	//		if err != nil {
-	//			return
-	//		}
-	//	default:
-	//		err = define.UnsupportedTypeError
-	//		return
-	//	}
-	//case reflect.Ptr:
-	//	// pointer dereference
-	//	return g.CompileInsert(rv.Elem().Interface(), builder)
-	//default:
-	//	err = define.UnsupportedTypeError
-	//	return
-	//}
-	//if columns == "" {
-	//	return
-	//}
-	//sqlStr = fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", table, columns, parameters)
-	//return
 }
 
-func (g *Grammar) CompileInsertMulti(builder *Builder, objects ...interface{}) (
-	sqlStr string, bindings []interface{}, err error) {
+// 处理插入一个struct
+func (g *Grammar) processInsertObject(obj interface{}, builder *Builder) (
+	table, column, parameter string, bindings []interface{}, err error) {
 	var (
-		values                   []interface{}
-		parameters               []string
-		table, column, parameter string
+		columns   []string
+		values    []interface{}
+		objMapper *mapper.Mapper
 	)
-	if len(objects) <= 0 {
-		err = define.MultiInsertNoObjectError
+
+	if objMapper, err = mapper.NewMapper(obj, g.syntax, g.styler); err != nil {
 		return
 	}
 
-	table, column, parameter, values, err = g.processInsertObjectType(objects[0], builder)
-	if err != nil {
+	if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
 		return
 	}
 
-	parameters = append(parameters, parameter)
-	bindings = append(bindings, values...)
-	for i := 1; i < len(objects); i++ {
-		parameter, values, err = g.getInsertObjectParameterAndBindings(objects[i])
+	if builder.tableName == "" {
+		builder.tableName = objMapper.GetTable()
+	}
+
+	if columns, values = objMapper.GetInsertColumnAndValues(); len(columns) <= 0 {
+		return
+	}
+	table = g.syntax.WrapTable(builder.tableName)
+	column = g.syntax.ColumnToString(columns)
+	parameter = "(" + g.syntax.ParameterByLenToString(len(values)) + ")"
+	bindings = values
+	return
+}
+
+// 处理插入多个struct
+func (g *Grammar) processInsertMultiObject(rf reflect.Value, builder *Builder) (
+	table, column string, parameters []string, bindings []interface{}, err error) {
+
+	var (
+		parameter string
+		values    []interface{}
+		rfLen     int
+	)
+	if rfLen = rf.Len(); rfLen <= 0 {
+		return
+	}
+
+	for next := 0; next < rfLen; next++ {
+		rfByIndex := rf.Index(next)
+		v := rfByIndex.Interface()
+		table, column, parameter, values, err = g.processInsertObject(v, builder)
 		if err != nil {
-			return
+			continue
 		}
 		parameters = append(parameters, parameter)
 		bindings = append(bindings, values...)
 	}
-	sqlStr = g.buildMultiInsertSql(table, column, parameters)
+	return
+}
+
+// 处理插入 map类型
+func (g *Grammar) processInsertMap(pointer bool, value interface{}, builder *Builder) (
+	sqlStr string, bindings []interface{}, err error) {
+	var (
+		table     string
+		column    string
+		parameter string
+		ok        bool
+		v         map[string]interface{}
+	)
+	if builder.tableName == "" {
+		err = define.TableNoneError
+		return
+	}
+	table = g.syntax.WrapTable(builder.tableName)
+
+	if pointer {
+		switch value.(type) {
+		case *map[string]interface{}:
+			ok = true
+		}
+		if !ok {
+			err = define.PointerMapTypeError
+			return
+		}
+		v = *value.(*map[string]interface{})
+	} else {
+		if v, ok = value.(map[string]interface{}); !ok {
+			err = define.MapTypeError
+			return
+		}
+	}
+
+	if len(v) <= 0 {
+		err = define.InsertMapEmptyError
+		return
+	}
+	column, parameter, bindings = g.parseInsertMap(v)
+	sqlStr = g.buildInsertSql(table, column, parameter)
+	return
+}
+
+// 处理插入slice map 类型
+func (g *Grammar) processInsertMultiMap(pointer bool, value interface{}, builder *Builder) (
+	sqlStr string, bindings []interface{}, err error) {
+
+	var (
+		ok        bool
+		table     string
+		column    string
+		parameter string
+		values    []map[string]interface{}
+	)
+	if builder.tableName == "" {
+		err = define.TableNoneError
+		return
+	}
+	table = g.syntax.WrapTable(builder.tableName)
+
+	if pointer {
+		switch value.(type) {
+		case *[]map[string]interface{}:
+			ok = true
+		}
+		if !ok {
+			err = define.InsertPointerSliceMapTypeError
+			return
+		}
+		values = *value.(*[]map[string]interface{})
+	} else {
+		if values, ok = value.([]map[string]interface{}); !ok {
+			err = define.MapTypeError
+			return
+		}
+	}
+
+	if len(values) <= 0 {
+		err = define.InsertSliceMapEmptyError
+		return
+	}
+	column, parameter, bindings = g.parseInsertMap(values...)
+	sqlStr = g.buildInsertSql(table, column, parameter)
+	return
+}
+
+// 解析插入的map
+func (g *Grammar) parseInsertMap(values ...map[string]interface{}) (column, parameter string, bindings []interface{}) {
+	var (
+		keys []string
+		buf  bytes.Buffer
+	)
+
+	// 获取key并进行排序
+	for k := range values[0] {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	keysLen := len(keys)
+	for _, m := range values {
+		for i := 0; i < keysLen; i++ {
+			if v, ok := m[keys[i]]; !ok {
+				// 后续map中没有值的key, 使用空值代替
+				bindings = append(bindings, nil)
+			} else {
+				bindings = append(bindings, v)
+			}
+		}
+		buf.WriteString("(" + g.syntax.ParameterByLenToString(keysLen) + "),")
+	}
+	column = g.syntax.ColumnToInsertString(keys)
+	parameter = buf.String()[:buf.Len()-1]
 	return
 }
 
@@ -137,235 +238,4 @@ func (g *Grammar) buildMultiInsertSql(table, column string, parameters []string)
 		}
 	}
 	return fmt.Sprintf("insert into %s (%s) values %s;", table, column, buf.String())
-}
-
-// 处理插入 map类型
-func (g *Grammar) processInsertMapType(pointer bool, value interface{}, builder *Builder) (table,
-columns, parameters string, bindings []interface{}, err error) {
-
-	var (
-		ok bool
-		v  map[string]interface{}
-	)
-	if builder.tableName == "" {
-		err = define.TableNoneError
-		return
-	}
-	table = g.syntax.WrapTable(builder.tableName)
-	if pointer {
-		switch value.(type) {
-		case *map[string]interface{}:
-			ok = true
-		}
-		if !ok {
-			err = errors.New("The map type like map[string]interface{}")
-			return
-		}
-		v = *value.(*map[string]interface{})
-	} else {
-		if v, ok = value.(map[string]interface{}); !ok {
-			err = errors.New("The map type like map[string]interface{}")
-			return
-		}
-	}
-	if len(v) <= 0 {
-		return
-	}
-	columns, parameters, bindings = g.processInsertMap(v)
-	return
-}
-
-// 处理插入slice map 类型
-func (g *Grammar) processInsertSliceMapType(pointer bool, value interface{}, builder *Builder) (
-	table, columns, parameters string, bindings []interface{}, err error) {
-
-	var (
-		ok     bool
-		values []map[string]interface{}
-	)
-	if builder.tableName == "" {
-		err = define.TableNoneError
-		return
-	}
-	table = g.syntax.WrapTable(builder.tableName)
-	if pointer {
-		switch value.(type) {
-		case *[]map[string]interface{}:
-			ok = true
-		}
-		if !ok {
-			err = errors.New("The map type like []map[string]interface{}")
-			return
-		}
-		values = *value.(*[]map[string]interface{})
-	} else {
-		if values, ok = value.([]map[string]interface{}); !ok {
-			err = errors.New("The map type like []map[string]interface{}")
-			return
-		}
-	}
-	if len(values) <= 0 {
-		return
-	}
-	columns, parameters, bindings = g.processInsertMap(values...)
-	return
-}
-
-// 处理插入map
-func (g *Grammar) processInsertMap(values ...map[string]interface{}) (
-	columnStr, parameterStr string, bindings []interface{}) {
-	var (
-		keys []string
-		buf  bytes.Buffer
-	)
-	for k := range values[0] {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-	keysLen := len(keys)
-	for _, m := range values {
-		for _, k := range keys {
-			if v, ok := m[k]; ok {
-				bindings = append(bindings, v)
-			}
-		}
-		buf.WriteString("(" + g.syntax.ParameterByLenToString(keysLen) + "),")
-	}
-	columnStr = g.syntax.ColumnToInsertString(keys)
-	parameterStr = buf.String()[:buf.Len()-1]
-	return
-}
-
-// 处理插入一个struct
-func (g *Grammar) processInsertObjectType(obj interface{}, builder *Builder) (
-	table, columnStr, parameterStr string, bindings []interface{}, err error) {
-	var (
-		column    []string
-		values    []interface{}
-		objMapper *mapper.Mapper
-	)
-	if objMapper, err = mapper.NewMapper(obj, g.syntax, g.styler); err != nil {
-		return
-	}
-
-	if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
-		return
-	}
-
-	if builder.tableName == "" {
-		builder.tableName = objMapper.GetTable()
-	}
-
-	if column, values = objMapper.GetInsertColumnAndValues(); len(column) <= 0 {
-		return
-	}
-	table = g.syntax.WrapTable(builder.tableName)
-	columnStr = g.syntax.ColumnToString(column)
-	parameterStr = "(" + g.syntax.ParameterByLenToString(len(values)) + ")"
-	bindings = values
-	return
-}
-
-func (g *Grammar) getInsertObjectParameterAndBindings(object interface{}) (
-	parameter string, bindings []interface{}, err error) {
-
-	var objMapper *mapper.Mapper
-	if objMapper, err = mapper.NewMapper(object, g.syntax, g.styler); err != nil {
-		return
-	}
-
-	if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
-		return
-	}
-
-	bindings = objMapper.GetInsertValues()
-	parameter = "(" + g.syntax.ParameterByLenToString(len(bindings)) + ")"
-	return
-}
-
-// 处理插入多个struct
-func (g *Grammar) processInsertMultiObject(rf reflect.Value, builder *Builder) (table, column, parameter string, bindings []interface{}, err error) {
-
-	var (
-		//buf        bytes.Buffer
-		parameters []string
-		values     []interface{}
-		rfLen      int
-		//objMapper  *mapper.Mapper
-	)
-	if rfLen = rf.Len(); rfLen <= 0 {
-		return
-	}
-
-	//next := 0
-	// 找到第一个可以用于插入的struct
-	// 提取出column
-	for next := 0; next < rfLen; next++ {
-		rfByIndex := rf.Index(next)
-		v := rfByIndex.Interface()
-		table, column, parameter, values, err = g.processInsertObjectType(v, builder)
-		if err != nil {
-			continue
-		}
-		parameters = append(parameters, parameter)
-		bindings = append(bindings, values...)
-		//if reflect.DeepEqual(v, reflect.Zero(rfByIndex.Type()).Interface()) {
-		//	continue
-		//}
-
-		//if objMapper, err = mapper.NewMapper(v, g.syntax, g.styler); err != nil {
-		//	continue
-		//}
-		//
-		//if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
-		//	continue
-		//}
-		//
-		//if builder.tableName == "" {
-		//	builder.tableName = objMapper.GetTable()
-		//}
-		//
-		//if columns, values = objMapper.GetInsertColumnAndValues(); len(columns) <= 0 {
-		//	continue
-		//}
-		//
-		//buf.WriteString("(" + g.syntax.ParameterByLenToString(len(values)) + "),")
-		//bindings = append(bindings, values...)
-		//break
-	}
-
-	sqlstr := g.buildMultiInsertSql(table, column, parameters)
-	println(sqlstr)
-
-	//for i := next + 1; i < rfLen; i++ {
-	//	refI := rf.Index(i)
-	//	v := refI.Interface()
-	//
-	//	if reflect.DeepEqual(v, reflect.Zero(refI.Type()).Interface()) {
-	//		continue
-	//	}
-	//
-	//	if objMapper, err = mapper.NewMapper(v, g.syntax, g.styler); err != nil {
-	//		continue
-	//	}
-	//
-	//	if err = objMapper.Parse(mapper.PARSE_INSERT); err != nil {
-	//		continue
-	//	}
-	//
-	//	if values = objMapper.GetValuesByColumns(columns); values == nil {
-	//		continue
-	//	}
-	//	buf.WriteString("(" + g.syntax.ParameterByLenToString(len(values)) + "),")
-	//	bindings = append(bindings, values...)
-	//}
-	// slice中所有的struct都是空的
-	//if buf.Len() <= 0 {
-	//	return
-	//}
-	//table = g.syntax.WrapTable(builder.tableName)
-	//column = g.syntax.ColumnToString(columns)
-	//paramter = buf.String()[:buf.Len()-1]
-	return
 }

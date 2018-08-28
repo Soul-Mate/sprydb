@@ -3,39 +3,31 @@ package sprydb
 import (
 	"database/sql"
 	"context"
-	"time"
 )
 
 type Transaction struct {
 	db      *sql.DB
 	tx      *sql.Tx
 	ctx     context.Context
-	timeout time.Duration
+	cancel  context.CancelFunc
 }
 
-func newTransaction(db *sql.DB, timeout time.Duration) *Transaction {
+func newTransaction(db *sql.DB) *Transaction {
 	transaction := new(Transaction)
 	transaction.db = db
 	transaction.tx = nil
 	transaction.ctx = context.Background()
-	transaction.timeout = timeout
 	return transaction
 }
 
 func (t *Transaction) begin() (err error) {
-	var (
-		tx  *sql.Tx
-		ctx context.Context
-	)
+	var tx  *sql.Tx
 	// 设置了事务超时时间
 	// 事务使用新的context来进行超时管理
-	if t.timeout != 0 {
-		ctx, _ = context.WithTimeout(t.ctx, t.timeout)
-	} else {
-		ctx = t.ctx
-	}
-
-	if tx, err = t.db.BeginTx(ctx, nil); err != nil {
+	//if t.timeout != 0 {
+	//	t.ctx, t.cancel = context.WithTimeout(t.ctx, t.timeout)
+	//}
+	if tx, err = t.db.BeginTx(t.ctx, nil); err != nil {
 		return
 	}
 	t.tx = tx

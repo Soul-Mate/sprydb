@@ -4,16 +4,29 @@ import (
 	"log"
 	"github.com/Soul-Mate/sprydb"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/Soul-Mate/sprydb/mapper"
+	"time"
 )
+
+type UserProfileImpl struct {
+	profile string
+}
+
+func (p *UserProfileImpl) ReadFromDB(data []byte) {
+	p.profile = string(data)
+
+}
+
+func (p *UserProfileImpl) WriteToDB() []byte {
+	return []byte(p.profile)
+}
 
 type Users struct {
 	Id        int
-	Name      string
-	Show      int `spry:"update_zero:true"`
-	Flag      int
-	CreatedAt mapper.Time
+	Name      string           `spry:"col:name"`
+	CreatedAt time.Time        `spry:"col:created_at;use_alias:false;"`
+	Profile   *UserProfileImpl `spry:"col:profile"`
 }
+
 
 func main() {
 	var (
@@ -34,7 +47,6 @@ func main() {
 	}
 	user := Users{
 		Name: "sprydb",
-		Show: 0,
 	}
 	_, err = conn.Where("id", "=", 1).Update(user)
 	if err != nil {
