@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"database/sql"
 	"time"
-	)
+)
 
 type ExtendField struct {
 	alias  string
@@ -32,32 +32,6 @@ func newNullTypeField(tag *Tag) *Field {
 		typ:       "null",
 		tagString: tag.column,
 		fv:        nil,
-	}
-}
-
-// get sql.Null<T> type pointer
-func (f *Field) getFieldAddr() interface{} {
-	switch f.typ {
-
-	case
-		"int", "uint",
-		"int8", "uint8",
-		"int16", "uint16",
-		"int32", "uint32",
-		"int64", "uint64":
-		return &f.nullInt64
-	case "float32", "float64":
-		return &f.nullFloat64
-	case "string":
-		return &f.nullString
-	case "bool":
-		return &f.nullBool
-	case "custom", "time":
-		return &f.raw
-	case "raw":
-		return &f.raw
-	default:
-		return &f.addr
 	}
 }
 
@@ -111,6 +85,57 @@ func (f *Field) assignValue() {
 	}
 }
 
+// get sql.Null<T> type pointer
+func (f *Field) getFieldAddr() interface{} {
+	switch f.typ {
+
+	case
+		"int", "uint",
+		"int8", "uint8",
+		"int16", "uint16",
+		"int32", "uint32",
+		"int64", "uint64":
+		return &f.nullInt64
+	case "float32", "float64":
+		return &f.nullFloat64
+	case "string":
+		return &f.nullString
+	case "bool":
+		return &f.nullBool
+	case "custom", "time":
+		return &f.raw
+	case "raw":
+		return &f.raw
+	default:
+		return &f.addr
+	}
+}
+
+// 获取字段插入操作的值
+// 默认零值是写入的
+func (f *Field) getInsertValue() interface{} {
+	switch f.typ {
+	case "time":
+		if f.isZero() {
+			return nil
+		}
+		var layout = "2006-01-02 15:04:05"
+		if tm, ok := (*f).addr.(time.Time); ok {
+			return tm.Format(layout)
+		}
+		if tm, ok := (*f).addr.(*time.Time); ok {
+			return tm.Format(layout)
+		}
+		return nil
+	case "custom":
+		return (*f).addr.(Custom).WriteToDB()
+	case "null":
+		return nil
+	default:
+		return (*f).addr
+	}
+}
+
 // 获取字段更新操作的值
 // 会处理零值是否写入的情况
 func (f *Field) getUpdateValue() interface{} {
@@ -137,36 +162,11 @@ func (f *Field) getUpdateValue() interface{} {
 			return data
 		}
 	case "null":
-		return
+		return nil
 	default:
 		if !f.tag.updateZero && f.isZero() {
 			return nil
 		}
-		return (*f).addr
-	}
-}
-
-// 获取字段插入操作的值
-// 默认零值是写入的
-func (f *Field) getInsertValue() interface{} {
-	switch f.typ {
-	case "time":
-		if f.isZero() {
-			return nil
-		}
-		var layout = "2006-01-02 15:04:05"
-		if tm, ok := (*f).addr.(time.Time); ok {
-			return tm.Format(layout)
-		}
-		if tm, ok := (*f).addr.(*time.Time); ok {
-			return tm.Format(layout)
-		}
-		return nil
-	case "custom":
-		return (*f).addr.(Custom).WriteToDB()
-	case "null":
-		return nil
-	default:
 		return (*f).addr
 	}
 }

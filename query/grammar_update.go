@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"bytes"
 	"github.com/Soul-Mate/sprydb/mapper"
-	"errors"
 )
 
 func (g *Grammar) CompileUpdate(value interface{}, builder *Builder) (string, []interface{}, error) {
@@ -31,19 +30,19 @@ func (g *Grammar) CompileUpdate(value interface{}, builder *Builder) (string, []
 	case reflect.Ptr:
 		return g.CompileUpdate(v.Elem().Interface(), builder)
 	default:
-		return "", nil, define.UnsupportedTypeError
+		return "", nil, define.UnsupportedUpdateTypeError
 	}
 	if columns == "" {
 		return "", nil, nil
 	}
 	wheres = g.CompileWhere(builder.wheres, true)
 	joins = g.CompileJoin(builder.joins)
-	sqls := fmt.Sprintf("UPDATE %s %s SET %s %s", table, joins, columns, wheres)
-	return sqls, bindings, nil
+	sqlStr := fmt.Sprintf("update %s %s set %s %s", table, joins, columns, wheres)
+	return sqlStr, bindings, nil
 }
 
 func (g *Grammar) processUpdateMapType(pointer bool, value interface{}, builder *Builder) (
-	table, columnStr string, bindings []interface{}, err error) {
+	table, column string, bindings []interface{}, err error) {
 	var (
 		ok bool
 		v  map[string]interface{}
@@ -66,11 +65,12 @@ func (g *Grammar) processUpdateMapType(pointer bool, value interface{}, builder 
 		v = *value.(*map[string]interface{})
 	} else {
 		if v, ok = value.(map[string]interface{}); !ok {
-			err = errors.New("The map type like map[string]interface{}")
+			err = define.MapTypeError
 		}
 	}
 
 	if len(v) <= 0 {
+		err = define.UpdateEmptyMapError
 		return
 	}
 
@@ -81,14 +81,14 @@ func (g *Grammar) processUpdateMapType(pointer bool, value interface{}, builder 
 		bindings = append(bindings, mv)
 	}
 	table = g.syntax.WrapAliasTable(builder.tableName, builder.tableAlias)
-	columnStr = buf.String()[:buf.Len()-1]
+	column = buf.String()[:buf.Len()-1]
 	return
 }
 
 func (g *Grammar) processUpdateObjectType(value interface{}, builder *Builder) (
-	table, columnStr string, bindings []interface{}, err error) {
+	table, column string, bindings []interface{}, err error) {
 	var (
-		column    []string
+		columns   []string
 		values    []interface{}
 		objMapper *mapper.Mapper
 	)
@@ -111,11 +111,13 @@ func (g *Grammar) processUpdateObjectType(value interface{}, builder *Builder) (
 		builder.tableAlias = objMapper.GetAlias()
 	}
 
-	if column, values = objMapper.GetColumnsAndValuesNotZero(); len(column) <= 0 {
+	if columns, values = objMapper.GetUpdateColumnAndValues(); len(columns) <= 0 {
+		err = define.UpdateEmptyStructError
 		return
 	}
+
 	table = g.syntax.WrapAliasTable(builder.tableName, builder.tableAlias)
-	columnStr = g.syntax.ColumnToUpdateString(column)
+	column = g.syntax.ColumnToUpdateString(columns)
 	bindings = append(bindings, values...)
 	return
 }

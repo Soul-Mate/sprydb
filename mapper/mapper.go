@@ -597,7 +597,7 @@ func (m *Mapper) GetInsertColumnAndValues() (columns []string, values []interfac
 	return
 }
 
-func (m *Mapper) GetColumnsAndValuesNotZero() (columns []string, values []interface{}) {
+func (m *Mapper) GetUpdateColumnAndValues() (columns []string, values []interface{}) {
 	for _, c := range m.fm.k {
 		if f, ok := m.fm.get(c); ok {
 			if value := f.getUpdateValue(); value != nil {
@@ -606,6 +606,5 @@ func (m *Mapper) GetColumnsAndValuesNotZero() (columns []string, values []interf
 			}
 		}
 	}
-	//columns, values = recursionGetColumnsAndValues(m.fields, false)
 	return
 }
